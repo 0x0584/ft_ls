@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:23:22 by archid-           #+#    #+#             */
-/*   Updated: 2019/12/09 03:23:10 by archid-          ###   ########.fr       */
+/*   Updated: 2019/12/09 03:29:27 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,7 +108,9 @@ void	ft_ls(const char *path, t_flags *flags)
 			else
 				ft_printf("%s%s", node->d_name,
 							flags->one_per_line ? "\n" : " ");
-			if (flags->recursive && FILE_TYPE(s, S_IFDIR))
+
+			if (node->d_name[0] != '.' && flags->recursive
+					&& FILE_TYPE(s, S_IFDIR))
 				queue_enq(dirs,
 						  queue_node_init(malloc(sizeof(struct s_queue_node)),
 										  full_path, sizeof(char *)));
