@@ -6,7 +6,7 @@
 #    By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/12/08 22:27:47 by archid-           #+#    #+#              #
-#    Updated: 2019/12/08 22:41:33 by archid-          ###   ########.fr        #
+#    Updated: 2019/12/10 20:09:04 by archid-          ###   ########.fr        #
 #                                                                              #
 #******************************************************************************#
 
@@ -14,7 +14,7 @@ DEBUG		?= 1
 NAME		= ft_ls
 
 FTDIR		= libft
-LDFT		= -L$(FDDIR) -lft
+LDFT		= -L$(FTDIR) -lft
 
 SRCSDIR		= src
 DEPSDIR		= include
@@ -27,7 +27,7 @@ CC			= gcc
 CFLAGS		= -Wall -Wextra
 DEPS		= -I$(FTDIR) -Iinclude
 
-ifeq ($(DEBUG), 1)
+ifeq ($(DEBUG),1)
 	CFLAGS += -g
 else
 	CFLAGS += -Werror -O2
@@ -36,11 +36,11 @@ endif
 all: $(NAME)
 
 $(NAME): init $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $@ $(DEPS) $(LDFT)
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(DEPS) $(LDFT)
 
 $(OBJSDIR)/%.o: $(SRCSDIR)/%.c
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c $@ -o $< $(DEPS)
+	$(CC) $(CFLAGS) -c $< -o $@ $(DEPS) $(LDFT)
 
 init:
 	@make -C $(FTDIR)

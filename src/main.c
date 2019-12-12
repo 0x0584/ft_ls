@@ -6,13 +6,16 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:23:22 by archid-           #+#    #+#             */
-/*   Updated: 2019/12/09 03:29:27 by archid-          ###   ########.fr       */
+/*   Updated: 2019/12/12 19:10:57 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 /* gcc -Wall -Wextra src/\*.c -o ft_ls -Iinclude -Ilibft -Llibft -lft */
 
 #include "ft_ls.h"
+
+int		n_link_width = 1;
+int		n_size_width = 1;
 
 int			parse_flags(int ac, char **av, t_flags *flags)
 {
@@ -38,101 +41,195 @@ int			parse_flags(int ac, char **av, t_flags *flags)
 				flags->show_all = true;
 			else if (av[i][j] == FLAG_RECURSIVE)
 				flags->recursive = true;
+			else if (av[i][j] == FLAG_SORT_REV)
+				flags->sort_rev = true;
+			else if (av[i][j] == FLAG_SORT_ACC_TIME)
+				flags->sort_acc_time = true;
+			else if (av[i][j] == FLAG_SORT_MOD_TIME)
+				flags->sort_mod_time = true;
 		}
 		i++;
 	}
 	return (i);
 }
 
-/* FIXME: ctime() leave memory leaks */
+static char	get_file_type(struct stat s)
+{
+	if (FILE_TYPE(s, S_IFBLK))
+		return 'b';
+	else if (FILE_TYPE(s, S_IFCHR))
+		return 'c';
+	else if (FILE_TYPE(s, S_IFDIR))
+		return 'd';
+	else if (FILE_TYPE(s, S_IFIFO))
+		return 'p';
+	else if (FILE_TYPE(s, S_IFLNK))
+		return 'l';
+	else if (FILE_TYPE(s, S_IFREG))
+		return '-';
+	else if (FILE_TYPE(s, S_IFSOCK))
+		return 's';
+	return '?';
+}
 
-void	get_file_info(const char *file, struct stat s)
+static char *list_permissions(struct stat s)
+{
+    static const char *rwx[] = {
+		"---", "--x", "-w-", "-wx",
+		"r--", "r-x", "rw-", "rwx"
+	};
+    static char bits[11];
+
+    bits[0] = get_file_type(s);
+    ft_strcpy(&bits[1], rwx[(s.st_mode >> 6)& 7]);
+    ft_strcpy(&bits[4], rwx[(s.st_mode >> 3)& 7]);
+    ft_strcpy(&bits[7], rwx[(s.st_mode & 7)]);
+    if (s.st_mode & S_ISUID)
+        bits[3] = (s.st_mode & S_IXUSR) ? 's' : 'S';
+    if (s.st_mode & S_ISGID)
+        bits[6] = (s.st_mode & S_IXGRP) ? 's' : 'l';
+    if (s.st_mode & S_ISVTX)
+        bits[9] = (s.st_mode & S_IXOTH) ? 't' : 'T';
+    bits[10] = '\0';
+    return(bits);
+}
+
+void	list_details(const char *file, struct stat s)
+{
+	ft_printf("%s %s\n", list_permissions(s), file);
+}
+
+void	get_file_info(const char *path, const char *file, struct stat s)
 {
 	char		*type;
 
-	type = "unkown!!?";
-	if (FILE_TYPE(s, S_IFBLK))
-		type = "block device!";
-	else if (FILE_TYPE(s, S_IFCHR))
-		type = "character device";
-	else if (FILE_TYPE(s, S_IFDIR))
-		type = "directory";
-	else if (FILE_TYPE(s, S_IFIFO))
-		type = "FIFO/pipe?!";
-	else if (FILE_TYPE(s, S_IFLNK))
-		type = "symbolic link";
-	else if (FILE_TYPE(s, S_IFREG))
-		type = "regular file (text?)";
-	else if (FILE_TYPE(s, S_IFSOCK))
-		type = "socket";
-	ft_printf("%s: %s\ni-node: %ld\nmode: %lo link count: %ld\n"
-			  "ownership: (uid: %ld, gid: %ld)\nblock size: %ld "
-			  "file size: %lld allocated: %lld\n\n",
-			  /* " - last change: %s - last access: %s - last modification: %s\n", */
-			  file, type, (long)s.st_ino,
-			  (unsigned long)s.st_mode, (unsigned long)s.st_nlink,
-			  (long)s.st_uid, (long)s.st_gid,
-			  (long)s.st_blksize, (long long)s.st_size, (long long)s.st_blocks
-			  /* ctime(&s.st_ctime), ctime(&s.st_atime), ctime(&s.st_mtime) */
-		);
+	/* type = "unkown!!?"; */
+	/* if (FILE_TYPE(s, S_IFBLK)) */
+	/* 	type = "block device!"; */
+	/* else if (FILE_TYPE(s, S_IFCHR)) */
+	/* 	type = "character device"; */
+	/* else if (FILE_TYPE(s, S_IFDIR)) */
+	/* 	type = "directory"; */
+	/* else if (FILE_TYPE(s, S_IFIFO)) */
+	/* 	type = "FIFO/pipe?!"; */
+	/* else if (FILE_TYPE(s, S_IFLNK)) */
+	/* 	type = "symbolic link"; */
+	/* else if (FILE_TYPE(s, S_IFREG)) */
+	/* 	type = "regular file (text?)"; */
+	/* else if (FILE_TYPE(s, S_IFSOCK)) */
+	/* 	type = "socket"; */
+	/* ft_printf("%s: %s\ni-node: %ld\nmode: %lo link count: %ld\n" */
+	/* 		  "ownership: (uid: %ld, gid: %ld)\nblock size: %ld " */
+	/* 		  "file size: %lld allocated: %lld\n\n" */
+	/* 		  " - last change: %s - last access: %s - last modification: %s\n", */
+	/* 		  file, type, (long)s.st_ino, */
+	/* 		  (unsigned long)s.st_mode, (unsigned long)s.st_nlink, */
+	/* 		  (long)s.st_uid, (long)s.st_gid, */
+	/* 		  (long)s.st_blksize, (long long)s.st_size, (long long)s.st_blocks, */
+	/* 		  ctime(&s.st_ctime), ctime(&s.st_atime), ctime(&s.st_mtime) */
+	/* 	); */
+
+	struct passwd	*pwd;
+	struct group	*grp;
+
+	pwd = getpwuid(s.st_uid);
+	grp = getgrgid(s.st_gid);
+
+	ft_printf("%s %*d %s %s %*lld %s\n",
+			  list_permissions(s),
+			  n_link_width,
+			  s.st_nlink,
+			  pwd->pw_name, grp->gr_name,
+			  n_size_width,
+			  s.st_size,
+			  file);
+}
+
+void	display_files(t_lst *files, t_flags *flags)
+{
+	t_lst		walk;
+	t_queue		*dirs;
+	t_qnode		*e;
+	t_file		*foo;
+	t_lst		tmp;
+
+	walk = handle_sort(files, flags);
+	dirs = queue_init();
+	while (walk)
+	{
+		foo = walk->content;
+		if (flags->list)
+			get_file_info(foo->path, foo->name, foo->st);
+		else
+			ft_printf("%s%s", foo->name,
+					  flags->one_per_line ? "\n" : " ");
+		if (ft_strcmp(".", foo->name) && ft_strcmp("..", foo->name)
+				&& flags->recursive && FILE_TYPE(foo->st, S_IFDIR))
+			queue_enq(dirs,
+					  queue_node_init(malloc(sizeof(struct s_queue_node)),
+									  foo->path, sizeof(char *)));
+		else
+			free(foo->path);
+		free(foo->name);
+		tmp = walk;
+		walk = walk->next;
+		free(tmp->content);
+		free(tmp);
+	}
+	while (flags->recursive && queue_size(dirs))
+	{
+		e = queue_deq(dirs);
+		ft_printf("\n>>> dir: %s\n", e->blob);
+		ft_ls(e->blob, flags);
+		queue_node_del(&e, lstdel_helper);
+	}
+	queue_del(&dirs, lstdel_helper);
 }
 
 void	ft_ls(const char *path, t_flags *flags)
 {
 	DIR				*repo;		/* the actual directory */
 	struct dirent	*node;		/* node node */
-	struct stat		s;			/* file status */
-	char			*full_path;
-	t_queue			*dirs;
-	t_qnode			*e;
+	struct stat		s;
+	t_file			f;
+	t_lst			files;
 
 	if (stat(path, &s) == -1)
 		return perror("stat");
+	files = NULL;
+	n_link_width = 1;
+	n_size_width = 1;
 	if (FILE_TYPE(s, S_IFDIR))
 	{
 		repo = opendir(path);
 		ft_printf("\n%s:\n", path);
-		dirs = queue_init();
 		while ((node = readdir(repo)))
 		{
 			if (!flags->show_all && node->d_name[0] == '.')
 				continue ;
 			/* FIXME: many allocations, use a buffer! */
-			full_path = ft_strjoin(path, "/");
-			ft_strappend(&full_path, node->d_name);
-			if (stat(full_path, &s) == -1)
+			f.path = ft_strjoin(path, "/");
+			ft_strappend(&f.path, node->d_name);
+			f.name = ft_strdup(node->d_name);
+			if (stat(f.path, &f.st) == -1)
 				return perror("stat");
-			/* ft_printf("\n>>>>>> full_path: %s\n", full_path); */
-			if (flags->list)
-				get_file_info(full_path, s);
-			else
-				ft_printf("%s%s", node->d_name,
-							flags->one_per_line ? "\n" : " ");
-
-			if (node->d_name[0] != '.' && flags->recursive
-					&& FILE_TYPE(s, S_IFDIR))
-				queue_enq(dirs,
-						  queue_node_init(malloc(sizeof(struct s_queue_node)),
-										  full_path, sizeof(char *)));
-			else
-				free(full_path);
+			ft_lstadd(&files, ft_lstnew(&f, sizeof(t_file)));
+			n_link_width = MAX(n_link_width, ft_digitcount(f.st.st_nlink));
+			n_size_width = MAX(n_size_width, ft_digitcount(f.st.st_size));
 		}
 		closedir(repo);
-		ft_printf(flags->one_per_line ? "" : "\n");
-		while (flags->recursive && queue_size(dirs))
-		{
-			e = queue_deq(dirs);
-			/* ft_printf("\n>>> dir: %s\n", e->blob); */
-			ft_ls(e->blob, flags);
-			queue_node_del(&e, lstdel_helper);
-		}
-		queue_del(&dirs, lstdel_helper);
-		/* } */
-		/* else */
-		/* 	ft_printf("\ncannot read %s\n", path); */
 	}
-	else if (flags->list)
-		get_file_info(path, s);
+	else
+	{
+		/* f.path = ft_strjoin(path, "/"); */
+		/* ft_strappend(&f.path, node->d_name); */
+		f.path = ft_strdup(path);
+		f.name = (char *)path;
+		if (stat(f.path, &f.st) == -1)
+			return perror("stat");
+		ft_lstadd(&files, ft_lstnew(&f, sizeof(t_file)));
+	}
+	display_files(&files, flags);
 }
 
 int		main(int argc, char *argv[])
