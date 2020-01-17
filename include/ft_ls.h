@@ -6,31 +6,14 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:06:17 by archid-           #+#    #+#             */
-/*   Updated: 2019/12/12 19:03:11 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/17 21:09:05 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef FT_LS_H
 #define FT_LS_H
 
-#include "libft.h"
-#include "queue.h"
-
-/* opendir, readdir, closedir */
-/* opendir return DIR * */
-#include <dirent.h>
-/* stat ,lstat */
-#include <sys/stat.h>
-/* ctime */
-#include <time.h>
-/* getcwd */
-#include <unistd.h>
-/* getpwuid */
-#include <pwd.h>
-/* getgrgid */
-#include <grp.h>
-
-#define FILE_TYPE(s, type)				((s.st_mode & S_IFMT) == type)
+#include "file.h"
 
 enum e_ls_flags
 {
@@ -65,14 +48,6 @@ struct s_flags
 								 * if -lt ignore t.
 								 * if -l, show access sort by ascii */
 
-};
-
-typedef struct s_file t_file;
-struct s_file
-{
-	char		*path;
-	char		*name;
-	struct stat st;
 };
 
 /* FIXME: get the information about files in a repo; then print them */

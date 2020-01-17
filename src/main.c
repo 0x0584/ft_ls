@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:23:22 by archid-           #+#    #+#             */
-/*   Updated: 2019/12/12 19:10:57 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/17 22:33:38 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,8 @@
 
 #include "ft_ls.h"
 
-int		n_link_width = 1;
-int		n_size_width = 1;
+int		g_link_width = 1;
+int		g_size_width = 1;
 
 int			parse_flags(int ac, char **av, t_flags *flags)
 {
@@ -29,7 +29,7 @@ int			parse_flags(int ac, char **av, t_flags *flags)
 	while (i < ac)
 	{
 		j = 0;
-		if (av[i][j] != '-' || ft_isdigit(av[i][j + 1]))
+		if (av[i][j] != '-')
 			break ;
 		while (av[i][j++])
 		{
@@ -59,12 +59,12 @@ static char	get_file_type(struct stat s)
 		return 'b';
 	else if (FILE_TYPE(s, S_IFCHR))
 		return 'c';
+	else if (FILE_TYPE(s, S_IFLNK))
+		return 'l';
 	else if (FILE_TYPE(s, S_IFDIR))
 		return 'd';
 	else if (FILE_TYPE(s, S_IFIFO))
 		return 'p';
-	else if (FILE_TYPE(s, S_IFLNK))
-		return 'l';
 	else if (FILE_TYPE(s, S_IFREG))
 		return '-';
 	else if (FILE_TYPE(s, S_IFSOCK))
@@ -81,8 +81,8 @@ static char *list_permissions(struct stat s)
     static char bits[11];
 
     bits[0] = get_file_type(s);
-    ft_strcpy(&bits[1], rwx[(s.st_mode >> 6)& 7]);
-    ft_strcpy(&bits[4], rwx[(s.st_mode >> 3)& 7]);
+    ft_strcpy(&bits[1], rwx[(s.st_mode >> 6) & 7]);
+    ft_strcpy(&bits[4], rwx[(s.st_mode >> 3) & 7]);
     ft_strcpy(&bits[7], rwx[(s.st_mode & 7)]);
     if (s.st_mode & S_ISUID)
         bits[3] = (s.st_mode & S_IXUSR) ? 's' : 'S';
@@ -99,25 +99,46 @@ void	list_details(const char *file, struct stat s)
 	ft_printf("%s %s\n", list_permissions(s), file);
 }
 
-void	get_file_info(const char *path, const char *file, struct stat s)
+void print_stat(struct stat s)
 {
-	char		*type;
+	char *type;
 
-	/* type = "unkown!!?"; */
-	/* if (FILE_TYPE(s, S_IFBLK)) */
-	/* 	type = "block device!"; */
-	/* else if (FILE_TYPE(s, S_IFCHR)) */
-	/* 	type = "character device"; */
-	/* else if (FILE_TYPE(s, S_IFDIR)) */
-	/* 	type = "directory"; */
-	/* else if (FILE_TYPE(s, S_IFIFO)) */
-	/* 	type = "FIFO/pipe?!"; */
-	/* else if (FILE_TYPE(s, S_IFLNK)) */
-	/* 	type = "symbolic link"; */
-	/* else if (FILE_TYPE(s, S_IFREG)) */
-	/* 	type = "regular file (text?)"; */
-	/* else if (FILE_TYPE(s, S_IFSOCK)) */
-	/* 	type = "socket"; */
+	type = "unkown!!?";
+	if (FILE_TYPE(s, S_IFBLK))
+		type = "block device!";
+	else if (FILE_TYPE(s, S_IFCHR))
+		type = "character device";
+	else if (FILE_TYPE(s, S_IFDIR))
+		type = "directory";
+	else if (FILE_TYPE(s, S_IFIFO))
+		type = "FIFO/pipe?!";
+	else if (FILE_TYPE(s, S_IFLNK))
+		type = "symbolic link";
+	else if (FILE_TYPE(s, S_IFREG))
+		type = "regular file (text?)";
+	else if (FILE_TYPE(s, S_IFSOCK))
+		type = "socket";
+
+	ft_putendl(type);
+
+}
+
+char	*read_link_name(t_file *file)
+{
+	static char buff[256] = {0};
+
+	if (file->islink)
+	{
+		ft_strcpy(buff, " -> ");
+		readlink(file->name, buff + ft_strlen(" -> "), 256);
+	}
+	else
+		*buff = '\0';
+	return (buff);
+}
+
+void	get_file_info(t_file *file)
+{
 	/* ft_printf("%s: %s\ni-node: %ld\nmode: %lo link count: %ld\n" */
 	/* 		  "ownership: (uid: %ld, gid: %ld)\nblock size: %ld " */
 	/* 		  "file size: %lld allocated: %lld\n\n" */
@@ -132,18 +153,20 @@ void	get_file_info(const char *path, const char *file, struct stat s)
 	struct passwd	*pwd;
 	struct group	*grp;
 
-	pwd = getpwuid(s.st_uid);
-	grp = getgrgid(s.st_gid);
+	pwd = getpwuid(file->st.st_uid);
+	grp = getgrgid(file->st.st_gid);
 
-	ft_printf("%s %*d %s %s %*lld %s\n",
-			  list_permissions(s),
-			  n_link_width,
-			  s.st_nlink,
+	ft_printf("%s %*d %s %s %*lld %s%s\n",
+			  list_permissions(file->st),
+			  g_link_width,
+			  file->st.st_nlink,
 			  pwd->pw_name, grp->gr_name,
-			  n_size_width,
-			  s.st_size,
-			  file);
+			  g_size_width,
+			  file->st.st_size,
+			  file->name, read_link_name(file));
 }
+
+#define QNODE_AS(type, e)							((type *)e->content)
 
 void	display_files(t_lst *files, t_flags *flags)
 {
@@ -157,9 +180,12 @@ void	display_files(t_lst *files, t_flags *flags)
 	dirs = queue_init();
 	while (walk)
 	{
+		tmp = walk;
 		foo = walk->content;
+		walk = walk->next;
+
 		if (flags->list)
-			get_file_info(foo->path, foo->name, foo->st);
+			get_file_info(foo);
 		else
 			ft_printf("%s%s", foo->name,
 					  flags->one_per_line ? "\n" : " ");
@@ -169,17 +195,16 @@ void	display_files(t_lst *files, t_flags *flags)
 					  queue_node_init(malloc(sizeof(struct s_queue_node)),
 									  foo->path, sizeof(char *)));
 		else
-			free(foo->path);
-		free(foo->name);
-		tmp = walk;
-		walk = walk->next;
+			free(QNODE_AS(t_file, tmp)->path);
+		free(QNODE_AS(t_file, tmp)->name);
 		free(tmp->content);
 		free(tmp);
 	}
+	if (!flags->list)
+		ft_putchar('\n');
 	while (flags->recursive && queue_size(dirs))
 	{
 		e = queue_deq(dirs);
-		ft_printf("\n>>> dir: %s\n", e->blob);
 		ft_ls(e->blob, flags);
 		queue_node_del(&e, lstdel_helper);
 	}
@@ -190,44 +215,58 @@ void	ft_ls(const char *path, t_flags *flags)
 {
 	DIR				*repo;		/* the actual directory */
 	struct dirent	*node;		/* node node */
-	struct stat		s;
-	t_file			f;
+	struct stat		st;
+	struct stat		lnk;
+	t_file			file;
 	t_lst			files;
 
-	if (stat(path, &s) == -1)
-		return perror("stat");
+	bool follow_link = true;
+
+	if (lstat(path, &st) == -1)
+		return perror(path);
+	if (!flags->list)
+	{
+		if (stat(path, &st) == -1)
+			return perror(path);
+		follow_link = (lstat(path, &lnk) != -1);
+	}
+
+	/* print_stat(st); */
+	/* if (!flags->list) */
+	/* 	print_stat(lnk); */
+	/* getchar(); */
+
+
 	files = NULL;
-	n_link_width = 1;
-	n_size_width = 1;
-	if (FILE_TYPE(s, S_IFDIR))
+	g_link_width = 1;
+	g_size_width = 1;
+
+	if (FILE_TYPE(st, S_IFDIR))	/* if directory */
 	{
 		repo = opendir(path);
-		ft_printf("\n%s:\n", path);
+
+		if (flags->recursive)
+			ft_printf("\n%s:\n", path);
+
 		while ((node = readdir(repo)))
 		{
 			if (!flags->show_all && node->d_name[0] == '.')
 				continue ;
-			/* FIXME: many allocations, use a buffer! */
-			f.path = ft_strjoin(path, "/");
-			ft_strappend(&f.path, node->d_name);
-			f.name = ft_strdup(node->d_name);
-			if (stat(f.path, &f.st) == -1)
-				return perror("stat");
-			ft_lstadd(&files, ft_lstnew(&f, sizeof(t_file)));
-			n_link_width = MAX(n_link_width, ft_digitcount(f.st.st_nlink));
-			n_size_width = MAX(n_size_width, ft_digitcount(f.st.st_size));
+			else if (!file_init(&file, path, node->d_name, !flags->list))
+				return perror(file.name);
+
+			ft_lstadd(&files, ft_lstnew(&file, sizeof(t_file)));
+
+			g_link_width = MAX(g_link_width, ft_digitcount(file.st.st_nlink));
+			g_size_width = MAX(g_size_width, ft_digitcount(file.st.st_size));
 		}
+
 		closedir(repo);
 	}
-	else
+	else						/* if is file */
 	{
-		/* f.path = ft_strjoin(path, "/"); */
-		/* ft_strappend(&f.path, node->d_name); */
-		f.path = ft_strdup(path);
-		f.name = (char *)path;
-		if (stat(f.path, &f.st) == -1)
-			return perror("stat");
-		ft_lstadd(&files, ft_lstnew(&f, sizeof(t_file)));
+		file_init(&file, path, path, !flags->list);
+		ft_lstadd(&files, ft_lstnew(&file, sizeof(t_file)));
 	}
 	display_files(&files, flags);
 }
@@ -238,12 +277,10 @@ int		main(int argc, char *argv[])
 	int		i;
 	char	cwd[512];
 
-	if ((i = parse_flags(argc ,argv, &flags)) < argc)
+	i = parse_flags(argc ,argv, &flags);
+	if (i < argc)
 		while (i < argc)
-		{
 			ft_ls(argv[i++], &flags);
-			i++;
-		}
 	else
 	{
 		if (!(getcwd(cwd, sizeof(cwd))))
