@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:23:22 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/17 22:33:38 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/18 02:01:42 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,8 @@ int			parse_flags(int ac, char **av, t_flags *flags)
 				flags->list = true;
 			else if (av[i][j] == FLAG_ONE_PER_LINE)
 				flags->one_per_line = true;
+			else if (av[i][j] == FLAG_HUMAN_SIZE)
+				flags->human_size = true;
 			else if (av[i][j] == FLAG_SHOW_ALL)
 				flags->show_all = true;
 			else if (av[i][j] == FLAG_RECURSIVE)
@@ -137,7 +139,37 @@ char	*read_link_name(t_file *file)
 	return (buff);
 }
 
-void	get_file_info(t_file *file)
+char	*get_file_size(t_file *file, t_flags *flags)
+{
+	static char buff[64];
+	static char *units[] = {"", "B", "K", "M", "G", "T"};
+	double size;
+	size_t unit;
+
+	unit = 0;
+	size = file->st.st_size;
+	ft_bzero(buff, 64);
+	if (flags->human_size)
+	{
+		unit++;
+		while (size / 1024 >= 1)
+		{
+			size /= 1024;
+			unit++;
+		}
+		/* FIXME: find how to get the output of ls with size */
+		ft_snprintf(buff, 64, "%.1lf", size);
+
+	}
+	else
+	{
+		ft_snprintf(buff, 64, "%lld", file->st.st_size);
+	}
+	ft_snprintf(buff, 64, "%*s%s", g_size_width + 1, buff, units[unit]);
+	return buff;
+}
+
+void	get_file_info(t_file *file, t_flags *flags)
 {
 	/* ft_printf("%s: %s\ni-node: %ld\nmode: %lo link count: %ld\n" */
 	/* 		  "ownership: (uid: %ld, gid: %ld)\nblock size: %ld " */
@@ -156,13 +188,12 @@ void	get_file_info(t_file *file)
 	pwd = getpwuid(file->st.st_uid);
 	grp = getgrgid(file->st.st_gid);
 
-	ft_printf("%s %*d %s %s %*lld %s%s\n",
+	ft_printf("%s %*d %s %s %s %s%s\n",
 			  list_permissions(file->st),
 			  g_link_width,
 			  file->st.st_nlink,
 			  pwd->pw_name, grp->gr_name,
-			  g_size_width,
-			  file->st.st_size,
+			  get_file_size(file, flags),
 			  file->name, read_link_name(file));
 }
 
@@ -185,7 +216,7 @@ void	display_files(t_lst *files, t_flags *flags)
 		walk = walk->next;
 
 		if (flags->list)
-			get_file_info(foo);
+			get_file_info(foo, flags);
 		else
 			ft_printf("%s%s", foo->name,
 					  flags->one_per_line ? "\n" : " ");

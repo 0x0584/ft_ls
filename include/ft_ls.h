@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:06:17 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/17 21:09:05 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/18 01:43:18 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,6 +25,7 @@ enum e_ls_flags
 	FLAG_SORT_REV = 'r',
 	FLAG_SORT_ACC_TIME = 'u',
 	FLAG_SORT_MOD_TIME = 't',
+	FLAG_HUMAN_SIZE = 'h'
 };
 
 typedef struct s_flags t_flags;
@@ -47,10 +48,10 @@ struct s_flags
 	bool sort_acc_time;			/* -u
 								 * if -lt ignore t.
 								 * if -l, show access sort by ascii */
+	bool human_size;
 
 };
 
-/* FIXME: get the information about files in a repo; then print them */
 typedef struct s_ls_info t_info;
 struct s_ls_info
 {
