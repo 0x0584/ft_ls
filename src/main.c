@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:23:22 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/18 02:01:42 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/19 14:30:44 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -169,6 +169,25 @@ char	*get_file_size(t_file *file, t_flags *flags)
 	return buff;
 }
 
+
+
+char	*get_file_datetime(t_file *file)
+{
+	static char buff[13];
+	time_t now;
+	char *stime;
+	int lastchange;
+
+	ft_bzero(buff, 13);
+	now = time(NULL);
+	stime = ctime(&file->st.st_mtime);
+	lastchange = 11;
+	if (now - file->st.st_mtime >= SIXMONTHS)
+		lastchange += 8;
+	ft_snprintf(buff, 13, "%.7s%.5s", stime + 4, stime + lastchange);
+	return buff;
+}
+
 void	get_file_info(t_file *file, t_flags *flags)
 {
 	/* ft_printf("%s: %s\ni-node: %ld\nmode: %lo link count: %ld\n" */
@@ -188,12 +207,14 @@ void	get_file_info(t_file *file, t_flags *flags)
 	pwd = getpwuid(file->st.st_uid);
 	grp = getgrgid(file->st.st_gid);
 
-	ft_printf("%s %*d %s %s %s %s%s\n",
+	/* permissions - nlinks - user - group - file size - date - filename */
+	ft_printf("%s %*d %s %s %s %s %s%s\n",
 			  list_permissions(file->st),
 			  g_link_width,
 			  file->st.st_nlink,
 			  pwd->pw_name, grp->gr_name,
 			  get_file_size(file, flags),
+			  get_file_datetime(file),
 			  file->name, read_link_name(file));
 }
 
