@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:23:22 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/19 14:30:44 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/19 22:29:05 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -215,10 +215,10 @@ void	get_file_info(t_file *file, t_flags *flags)
 			  pwd->pw_name, grp->gr_name,
 			  get_file_size(file, flags),
 			  get_file_datetime(file),
-			  file->name, read_link_name(file));
+			  get_file_name(file), read_link_name(file));
 }
 
-#define QNODE_AS(type, e)							((type *)e->content)
+#define LST_AS(type, e)							((type *)e->content)
 
 void	display_files(t_lst *files, t_flags *flags)
 {
@@ -239,18 +239,14 @@ void	display_files(t_lst *files, t_flags *flags)
 		if (flags->list)
 			get_file_info(foo, flags);
 		else
-			ft_printf("%s%s", foo->name,
+			ft_printf("%s%s", get_file_name(foo),
 					  flags->one_per_line ? "\n" : " ");
 		if (ft_strcmp(".", foo->name) && ft_strcmp("..", foo->name)
 				&& flags->recursive && FILE_TYPE(foo->st, S_IFDIR))
-			queue_enq(dirs,
-					  queue_node_init(malloc(sizeof(struct s_queue_node)),
-									  foo->path, sizeof(char *)));
+			queue_enq(dirs, queue_dry_node(foo->path, sizeof(char *)));
 		else
-			free(QNODE_AS(t_file, tmp)->path);
-		free(QNODE_AS(t_file, tmp)->name);
-		free(tmp->content);
-		free(tmp);
+			free(LST_AS(t_file, tmp)->path);
+		ft_free(free, LST_AS(t_file, tmp)->name, tmp->content, tmp, NULL);
 	}
 	if (!flags->list)
 		ft_putchar('\n');

@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/12 17:28:35 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/17 19:39:05 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/19 14:35:11 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,5 +60,7 @@ t_lst	handle_sort(t_lst *alst, t_flags *flags)
 		ft_lst_mergesort(alst, sort_mod_time);
 	else if (flags->sort_acc_time)
 		ft_lst_mergesort(alst, sort_acc_time);
+	else
+		ft_lst_mergesort(alst, sort_ascii);
 	return *alst;
 }

@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:06:17 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/18 19:07:52 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/19 14:39:19 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,12 +19,15 @@ enum e_ls_flags
 {
 	FLAG_LIST = 'l',
 	FLAG_ONE_PER_LINE = '1',
+
 	FLAG_SHOW_ALL = 'a',
+
 	FLAG_RECURSIVE = 'R',
 
 	FLAG_SORT_REV = 'r',
 	FLAG_SORT_ACC_TIME = 'u',
 	FLAG_SORT_MOD_TIME = 't',
+
 	FLAG_HUMAN_SIZE = 'h'
 };
 
