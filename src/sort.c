@@ -6,61 +6,90 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/12 17:28:35 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/19 14:35:11 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/21 12:40:10 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ft_ls.h"
 
-int		sort_ascii(t_lst e1, t_lst e2)
+int		__sort_ascii(t_qnode *e1, t_qnode *e2, bool rev)
+{
+	t_file	*f1;
+	t_file	*f2;
+	int		sign;
+
+	f1 = e1->blob;
+	f2 = e2->blob;
+	sign = rev ? -1 : 1;
+	return sign * ft_strcmp(f1->name, f2->name);
+}
+
+int		__sort_mod_time(t_qnode *e1, t_qnode *e2, bool rev)
 {
 	t_file *f1;
 	t_file *f2;
+	int sign;
 
-	f1 = e1->content;
-	f2 = e2->content;
-	return ft_strcmp(f1->name, f2->name);
+	f1 = e1->blob;
+	f2 = e2->blob;
+	sign = rev ? -1 : 1;
+	return sign * (f2->st.st_mtime - f1->st.st_mtime);
 }
 
-int		sort_ascii_reversed(t_lst e1, t_lst e2)
+int		__sort_acc_time(t_qnode *e1, t_qnode *e2, bool rev)
 {
-	t_file *f1;
-	t_file *f2;
+	t_file	*f1;
+	t_file	*f2;
+	int		sign;
 
-	f1 = e1->content;
-	f2 = e2->content;
-	return ft_strcmp(f2->name, f1->name);
+	f1 = e1->blob;
+	f2 = e2->blob;
+	sign = rev ? -1 : 1;
+	return sign * (f2->st.st_atime - f1->st.st_atime);
 }
 
-int		sort_mod_time(t_lst e1, t_lst e2)
-{
-	t_file *f1;
-	t_file *f2;
 
-	f1 = e1->content;
-	f2 = e2->content;
-	return f1->st.st_mtime - f2->st.st_mtime;
+int		sort_ascii_desc(t_qnode *e1, t_qnode *e2)
+{
+	return __sort_ascii(e1, e2, true);
 }
 
-int		sort_acc_time(t_lst e1, t_lst e2)
+int		sort_ascii_asc(t_qnode *e1, t_qnode *e2)
 {
-	t_file *f1;
-	t_file *f2;
-
-	f1 = e1->content;
-	f2 = e2->content;
-	return f1->st.st_atime - f2->st.st_atime;
+	return __sort_ascii(e1, e2, false);
 }
 
-t_lst	handle_sort(t_lst *alst, t_flags *flags)
+int		sort_acc_time_desc(t_qnode *e1, t_qnode *e2)
 {
-	if (flags->sort_rev)
-		ft_lst_mergesort(alst, sort_ascii_reversed);
+	return __sort_acc_time(e1, e2, true);
+}
+
+int		sort_acc_time_asc(t_qnode *e1, t_qnode *e2)
+{
+	return __sort_acc_time(e1, e2, true);
+}
+
+int		sort_mod_time_desc(t_qnode *e1, t_qnode *e2)
+{
+	return __sort_mod_time(e1, e2, true);
+}
+
+int		sort_mod_time_asc(t_qnode *e1, t_qnode *e2)
+{
+ 	return __sort_mod_time(e1, e2, false);
+}
+
+t_queue *handle_sort(t_queue **aqueue, t_flags *flags)
+{
+	if (flags->sort_acc_time)
+		queue_mergesort(aqueue, flags->sort_rev
+							? sort_acc_time_desc : sort_acc_time_asc);
 	else if (flags->sort_mod_time)
-		ft_lst_mergesort(alst, sort_mod_time);
-	else if (flags->sort_acc_time)
-		ft_lst_mergesort(alst, sort_acc_time);
+		queue_mergesort(aqueue, flags->sort_rev
+							? sort_mod_time_desc : sort_mod_time_asc);
 	else
-		ft_lst_mergesort(alst, sort_ascii);
-	return *alst;
+		queue_mergesort(aqueue, flags->sort_rev
+							? sort_ascii_desc : sort_ascii_asc);
+
+	return *aqueue;
 }

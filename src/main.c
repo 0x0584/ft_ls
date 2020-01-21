@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:23:22 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/19 22:29:05 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/21 23:37:45 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,8 @@
 
 int		g_link_width = 1;
 int		g_size_width = 1;
+int		g_uid_width = 1;
+int		g_gid_width = 1;
 
 int			parse_flags(int ac, char **av, t_flags *flags)
 {
@@ -171,20 +173,54 @@ char	*get_file_size(t_file *file, t_flags *flags)
 
 
 
-char	*get_file_datetime(t_file *file)
+char	*get_file_datetime(t_file *file, t_flags *flags)
 {
 	static char buff[13];
 	time_t now;
+	time_t t;
 	char *stime;
+
 	int lastchange;
 
 	ft_bzero(buff, 13);
 	now = time(NULL);
-	stime = ctime(&file->st.st_mtime);
+	t = flags->sort_acc_time ? file->st.st_atime : file->st.st_mtime;
+	stime = ctime(&t);
 	lastchange = 11;
-	if (now - file->st.st_mtime >= SIXMONTHS)
+	if (now - t >= SIXMONTHS)
 		lastchange += 8;
 	ft_snprintf(buff, 13, "%.7s%.5s", stime + 4, stime + lastchange);
+	return buff;
+}
+
+char	*get_file_xattr(t_file *file)
+{
+	static char symb[2] = {0, 0};
+	acl_t acl;
+	acl_entry_t tmp;
+
+	*symb = ' ';
+	acl = acl_get_link_np(file->path, ACL_TYPE_EXTENDED);
+	if (acl && acl_get_entry(acl, ACL_FIRST_ENTRY, &tmp) == -1)
+	{
+		acl_free(acl);
+		return symb;
+	}
+	if (listxattr(file->path, NULL, 0, XATTR_NOFOLLOW) > 0)
+		*symb = '@';
+	else if (acl)
+		*symb = '+';
+	return symb;
+}
+
+char *get_char_dev(t_file *file)
+{
+	static char buff[64];
+
+	ft_bzero(buff, 64);
+	if (FILE_TYPE(file->st, S_IFCHR))
+		ft_snprintf(buff, 64, "%3d, %3d ", major(file->st.st_rdev),
+					minor(file->st.st_rdev));
 	return buff;
 }
 
@@ -201,62 +237,66 @@ void	get_file_info(t_file *file, t_flags *flags)
 	/* 		  ctime(&s.st_ctime), ctime(&s.st_atime), ctime(&s.st_mtime) */
 	/* 	); */
 
-	struct passwd	*pwd;
-	struct group	*grp;
-
-	pwd = getpwuid(file->st.st_uid);
-	grp = getgrgid(file->st.st_gid);
-
 	/* permissions - nlinks - user - group - file size - date - filename */
-	ft_printf("%s %*d %s %s %s %s %s%s\n",
+	ft_printf("%s%s %*d %*s %*s %s %s%s %s%s\n",
 			  list_permissions(file->st),
+			  get_file_xattr(file),
 			  g_link_width,
 			  file->st.st_nlink,
-			  pwd->pw_name, grp->gr_name,
+			  g_uid_width, file->pwd->pw_name,
+			  g_gid_width, file->grp->gr_name,
 			  get_file_size(file, flags),
-			  get_file_datetime(file),
+			  get_char_dev(file),
+			  get_file_datetime(file, flags),
 			  get_file_name(file), read_link_name(file));
 }
 
 #define LST_AS(type, e)							((type *)e->content)
 
-void	display_files(t_lst *files, t_flags *flags)
+
+void	display_files(t_queue **files, t_flags *flags)
 {
-	t_lst		walk;
+	t_queue		*sorted;
 	t_queue		*dirs;
 	t_qnode		*e;
-	t_file		*foo;
-	t_lst		tmp;
+	t_qnode		*tmp;
 
-	walk = handle_sort(files, flags);
+	sorted = handle_sort(files, flags);
 	dirs = queue_init();
-	while (walk)
+	while (!queue_isempty(sorted))
 	{
-		tmp = walk;
-		foo = walk->content;
-		walk = walk->next;
-
+		tmp = queue_deq(sorted);
 		if (flags->list)
-			get_file_info(foo, flags);
+			get_file_info(QNODE_AS(t_file, tmp), flags);
 		else
-			ft_printf("%s%s", get_file_name(foo),
+			ft_printf("%s%s", get_file_name(QNODE_AS(t_file, tmp)),
 					  flags->one_per_line ? "\n" : " ");
-		if (ft_strcmp(".", foo->name) && ft_strcmp("..", foo->name)
-				&& flags->recursive && FILE_TYPE(foo->st, S_IFDIR))
-			queue_enq(dirs, queue_dry_node(foo->path, sizeof(char *)));
+		if (ft_strcmp(".", QNODE_AS(t_file, tmp)->name)
+			&& ft_strcmp("..", QNODE_AS(t_file, tmp)->name)
+			&& flags->recursive && FILE_TYPE(QNODE_AS(t_file, tmp)->st, S_IFDIR))
+
+		{
+			queue_enq(dirs, queue_dry_node(QNODE_AS(t_file, tmp)->path,
+										   sizeof(char *)));
+			QNODE_AS(t_file, tmp)->path = NULL;
+		}
 		else
-			free(LST_AS(t_file, tmp)->path);
-		ft_free(free, LST_AS(t_file, tmp)->name, tmp->content, tmp, NULL);
+		{
+			free(QNODE_AS(t_file, tmp)->path);
+			QNODE_AS(t_file, tmp)->path = NULL;
+		}
+		queue_node_del(&tmp, queue_file_del);
 	}
 	if (!flags->list)
 		ft_putchar('\n');
-	while (flags->recursive && queue_size(dirs))
+	while (flags->recursive && !queue_isempty(dirs))
 	{
 		e = queue_deq(dirs);
 		ft_ls(e->blob, flags);
-		queue_node_del(&e, lstdel_helper);
+		queue_node_del(&e, queue_del_helper);
 	}
-	queue_del(&dirs, lstdel_helper);
+	queue_del(&dirs, queue_del_helper);
+	queue_del(&sorted, queue_del_helper);
 }
 
 void	ft_ls(const char *path, t_flags *flags)
@@ -266,7 +306,7 @@ void	ft_ls(const char *path, t_flags *flags)
 	struct stat		st;
 	struct stat		lnk;
 	t_file			file;
-	t_lst			files;
+	t_queue			*files;
 
 	bool follow_link = true;
 
@@ -285,7 +325,8 @@ void	ft_ls(const char *path, t_flags *flags)
 	/* getchar(); */
 
 
-	files = NULL;
+	files = queue_init();
+
 	g_link_width = 1;
 	g_size_width = 1;
 
@@ -303,7 +344,7 @@ void	ft_ls(const char *path, t_flags *flags)
 			else if (!file_init(&file, path, node->d_name, !flags->list))
 				return perror(file.name);
 
-			ft_lstadd(&files, ft_lstnew(&file, sizeof(t_file)));
+			queue_enq(files, queue_node(&file, sizeof(t_file)));
 
 			g_link_width = MAX(g_link_width, ft_digitcount(file.st.st_nlink));
 			g_size_width = MAX(g_size_width, ft_digitcount(file.st.st_size));
@@ -314,7 +355,7 @@ void	ft_ls(const char *path, t_flags *flags)
 	else						/* if is file */
 	{
 		file_init(&file, path, path, !flags->list);
-		ft_lstadd(&files, ft_lstnew(&file, sizeof(t_file)));
+		queue_enq(files, queue_node(&file, sizeof(t_file)));
 	}
 	display_files(&files, flags);
 }

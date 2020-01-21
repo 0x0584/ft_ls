@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/01/17 21:07:43 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/17 21:49:00 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/21 23:35:10 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,5 +29,18 @@
 #include <pwd.h>
 /* getgrgid */
 #include <grp.h>
+/* acl_get_link_np, acl_get_entery */
+#include <sys/acl.h>
+/* listxattr */
+#include <sys/xattr.h>
+
+# include <sys/types.h>
+/* major, minor */
+#include <sys/ioctl.h>
+
+extern int		g_link_width;
+extern int		g_size_width;
+extern int		g_uid_width;
+extern int		g_gid_width;
 
 #endif /* COMMON_H */

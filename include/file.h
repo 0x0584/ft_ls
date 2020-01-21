@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/01/17 21:06:59 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/19 22:26:53 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/21 23:32:55 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,14 +26,20 @@ struct s_file
 	char		*path;
 	char		*color;
 	char		*name;
+
 	struct stat st;
 	struct stat lnk;
 	bool		islink;
+
+	struct passwd	*pwd;
+	struct group	*grp;
 };
 
 char *get_full_path(t_file *file);
 bool file_init(t_file *file, const char *path, const char *name,
 				bool get_link_info);
+void file_del(t_file **f);
 char *get_file_name(t_file *file);
+void queue_file_del(void *e, size_t size);
 
 #endif

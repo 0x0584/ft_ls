@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:06:17 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/19 14:39:19 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/21 11:22:19 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ enum e_ls_flags
 	FLAG_HUMAN_SIZE = 'h'
 };
 
-typedef struct s_flags t_flags;
+typedef struct s_flags	t_flags;
 struct s_flags
 {
 
@@ -55,7 +55,7 @@ struct s_flags
 
 };
 
-typedef struct s_ls_info t_info;
+typedef struct s_ls_info	t_info;
 struct s_ls_info
 {
 	t_queue		*files;
@@ -63,7 +63,7 @@ struct s_ls_info
 	int			size_offset;
 };
 
-void	ft_ls(const char *path, t_flags *flags);
-t_lst	handle_sort(t_lst *alst, t_flags *flags);
+void						ft_ls(const char *path, t_flags *flags);
+t_queue						*handle_sort(t_queue **aqueue, t_flags *flags);
 
 #endif

@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/11 01:02:15 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/19 22:31:07 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/21 23:38:16 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,5 +76,30 @@ bool	file_init(t_file *file, const char *path, const char *name,
 		file->islink = FILE_TYPE(file->st, S_IFLNK);
 	}
 	file->color = get_file_color(file->st);
+	file->pwd = getpwuid(file->st.st_uid);
+	file->grp = getgrgid(file->st.st_gid);
+	g_uid_width = MAX((int)ft_strlen(file->pwd->pw_name), g_uid_width);
+	g_gid_width = MAX((int)ft_strlen(file->grp->gr_name), g_gid_width);
 	return (true);
+}
+
+void file_del(t_file **f)
+{
+	if (!f || !*f)
+		return ;
+	ft_strdel(&(*f)->path);
+	ft_strdel(&(*f)->name);
+	free(*f);
+	*f = NULL;
+
+}
+
+void queue_file_del(void *e, size_t size)
+{
+	t_file *f;
+
+	if (!size)
+		return ;
+	f = e;
+	file_del(&f);
 }
