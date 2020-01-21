@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/01/17 21:07:43 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/21 23:35:10 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/22 00:17:30 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,9 +38,11 @@
 /* major, minor */
 #include <sys/ioctl.h>
 
-extern int		g_link_width;
-extern int		g_size_width;
-extern int		g_uid_width;
-extern int		g_gid_width;
+extern int				g_link_width;
+extern int				g_size_width;
+extern int				g_uid_width;
+extern int				g_gid_width;
+extern uid_t			uid;
+extern struct passwd	*pw;
 
 #endif /* COMMON_H */

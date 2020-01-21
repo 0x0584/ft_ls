@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/11 01:02:15 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/21 23:38:16 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/22 00:36:03 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,19 +62,14 @@ bool	file_init(t_file *file, const char *path, const char *name,
 		ft_strappend(&file->path, name);
 		file->name = ft_strdup(name);
 	}
-	if (get_link_info)
-	{
-		if (stat(file->path, &file->st) == -1)
-			return false;
-		lstat(file->path, &file->lnk);
-		file->islink = false;
-	}
-	else
-	{
-		if (lstat(file->path, &file->st) == -1)
-			return false;
-		file->islink = FILE_TYPE(file->st, S_IFLNK);
-	}
+	file->islnk = false;
+	if (get_link_info && stat(file->path, &file->st) == -1)
+		return false;
+	else if (lstat(file->path, &file->st) == -1)
+		return false;
+	else if (FILE_TYPE(file->st, S_IFLNK))
+		file->islnk = true;
+
 	file->color = get_file_color(file->st);
 	file->pwd = getpwuid(file->st.st_uid);
 	file->grp = getgrgid(file->st.st_gid);

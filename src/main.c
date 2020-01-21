@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:23:22 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/21 23:37:45 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/22 00:39:10 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,10 +14,13 @@
 
 #include "ft_ls.h"
 
-int		g_link_width = 1;
-int		g_size_width = 1;
-int		g_uid_width = 1;
-int		g_gid_width = 1;
+int				g_link_width = 1;
+int				g_size_width = 1;
+int				g_uid_width = 1;
+int				g_gid_width = 1;
+
+uid_t			uid;
+struct passwd	*pw;
 
 int			parse_flags(int ac, char **av, t_flags *flags)
 {
@@ -131,7 +134,7 @@ char	*read_link_name(t_file *file)
 {
 	static char buff[256] = {0};
 
-	if (file->islink)
+	if (file->islnk)
 	{
 		ft_strcpy(buff, " -> ");
 		readlink(file->name, buff + ft_strlen(" -> "), 256);
@@ -143,14 +146,13 @@ char	*read_link_name(t_file *file)
 
 char	*get_file_size(t_file *file, t_flags *flags)
 {
-	static char buff[64];
-	static char *units[] = {"", "B", "K", "M", "G", "T"};
+	static char buff[64] = {0};
+	static char *units[] = {"", "B", "K", "M", "G", "T", "E", "Z"};
 	double size;
 	size_t unit;
 
 	unit = 0;
 	size = file->st.st_size;
-	ft_bzero(buff, 64);
 	if (flags->human_size)
 	{
 		unit++;
@@ -226,23 +228,10 @@ char *get_char_dev(t_file *file)
 
 void	get_file_info(t_file *file, t_flags *flags)
 {
-	/* ft_printf("%s: %s\ni-node: %ld\nmode: %lo link count: %ld\n" */
-	/* 		  "ownership: (uid: %ld, gid: %ld)\nblock size: %ld " */
-	/* 		  "file size: %lld allocated: %lld\n\n" */
-	/* 		  " - last change: %s - last access: %s - last modification: %s\n", */
-	/* 		  file, type, (long)s.st_ino, */
-	/* 		  (unsigned long)s.st_mode, (unsigned long)s.st_nlink, */
-	/* 		  (long)s.st_uid, (long)s.st_gid, */
-	/* 		  (long)s.st_blksize, (long long)s.st_size, (long long)s.st_blocks, */
-	/* 		  ctime(&s.st_ctime), ctime(&s.st_atime), ctime(&s.st_mtime) */
-	/* 	); */
-
 	/* permissions - nlinks - user - group - file size - date - filename */
-	ft_printf("%s%s %*d %*s %*s %s %s%s %s%s\n",
-			  list_permissions(file->st),
-			  get_file_xattr(file),
-			  g_link_width,
-			  file->st.st_nlink,
+	ft_printf("%s%s %*d %-*s %-*s %s %s%s %s%s\n",
+			  list_permissions(file->st), get_file_xattr(file),
+			  g_link_width, file->st.st_nlink,
 			  g_uid_width, file->pwd->pw_name,
 			  g_gid_width, file->grp->gr_name,
 			  get_file_size(file, flags),
@@ -299,31 +288,36 @@ void	display_files(t_queue **files, t_flags *flags)
 	queue_del(&sorted, queue_del_helper);
 }
 
+bool	user_has_permission(const char *path, struct stat st)
+{
+	char *tmp;
+
+	if (st.st_mode & S_IRGRP)
+		return true;
+	tmp = ft_strrchr(path, '/');
+	ft_printf("ls: %s: Permission denied\n", tmp ? tmp + 1 : path);
+	return false;
+}
+
 void	ft_ls(const char *path, t_flags *flags)
 {
 	DIR				*repo;		/* the actual directory */
 	struct dirent	*node;		/* node node */
 	struct stat		st;
-	struct stat		lnk;
 	t_file			file;
 	t_queue			*files;
 
-	bool follow_link = true;
-
 	if (lstat(path, &st) == -1)
 		return perror(path);
+
 	if (!flags->list)
 	{
 		if (stat(path, &st) == -1)
 			return perror(path);
-		follow_link = (lstat(path, &lnk) != -1);
 	}
 
-	/* print_stat(st); */
-	/* if (!flags->list) */
-	/* 	print_stat(lnk); */
-	/* getchar(); */
-
+	if (!user_has_permission(path, st))
+		return ;
 
 	files = queue_init();
 
@@ -352,11 +346,10 @@ void	ft_ls(const char *path, t_flags *flags)
 
 		closedir(repo);
 	}
-	else						/* if is file */
-	{
-		file_init(&file, path, path, !flags->list);
+	else if (!file_init(&file, path, path, !flags->list))
+		return (perror(path));
+	else
 		queue_enq(files, queue_node(&file, sizeof(t_file)));
-	}
 	display_files(&files, flags);
 }
 
@@ -365,6 +358,9 @@ int		main(int argc, char *argv[])
 	t_flags flags;
 	int		i;
 	char	cwd[512];
+
+	uid = geteuid();
+	pw = getpwuid(uid);
 
 	i = parse_flags(argc ,argv, &flags);
 	if (i < argc)
