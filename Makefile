@@ -6,7 +6,7 @@
 #    By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/12/08 22:27:47 by archid-           #+#    #+#              #
-#    Updated: 2019/12/10 20:09:04 by archid-          ###   ########.fr        #
+#    Updated: 2020/01/23 20:27:45 by archid-          ###   ########.fr        #
 #                                                                              #
 #******************************************************************************#
 
@@ -40,7 +40,7 @@ $(NAME): init $(OBJS)
 
 $(OBJSDIR)/%.o: $(SRCSDIR)/%.c
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c $< -o $@ $(DEPS) $(LDFT)
+	$(CC) $(CFLAGS) -c $< -o $@ $(DEPS)
 
 init:
 	@make -C $(FTDIR)

@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:23:22 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/22 00:39:10 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/23 22:18:48 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,13 +14,13 @@
 
 #include "ft_ls.h"
 
+uid_t			uid;
+struct passwd	*pw;
+
 int				g_link_width = 1;
 int				g_size_width = 1;
 int				g_uid_width = 1;
 int				g_gid_width = 1;
-
-uid_t			uid;
-struct passwd	*pw;
 
 int			parse_flags(int ac, char **av, t_flags *flags)
 {
@@ -79,7 +79,7 @@ static char	get_file_type(struct stat s)
 	return '?';
 }
 
-static char *list_permissions(struct stat s)
+static char *get_file_permissions(struct stat s)
 {
     static const char *rwx[] = {
 		"---", "--x", "-w-", "-wx",
@@ -101,43 +101,15 @@ static char *list_permissions(struct stat s)
     return(bits);
 }
 
-void	list_details(const char *file, struct stat s)
-{
-	ft_printf("%s %s\n", list_permissions(s), file);
-}
-
-void print_stat(struct stat s)
-{
-	char *type;
-
-	type = "unkown!!?";
-	if (FILE_TYPE(s, S_IFBLK))
-		type = "block device!";
-	else if (FILE_TYPE(s, S_IFCHR))
-		type = "character device";
-	else if (FILE_TYPE(s, S_IFDIR))
-		type = "directory";
-	else if (FILE_TYPE(s, S_IFIFO))
-		type = "FIFO/pipe?!";
-	else if (FILE_TYPE(s, S_IFLNK))
-		type = "symbolic link";
-	else if (FILE_TYPE(s, S_IFREG))
-		type = "regular file (text?)";
-	else if (FILE_TYPE(s, S_IFSOCK))
-		type = "socket";
-
-	ft_putendl(type);
-
-}
-
-char	*read_link_name(t_file *file)
+static char		*read_link_name(t_file *file)
 {
 	static char buff[256] = {0};
 
+	ft_bzero(buff, 256);
 	if (file->islnk)
 	{
 		ft_strcpy(buff, " -> ");
-		readlink(file->name, buff + ft_strlen(" -> "), 256);
+		readlink(file->path, buff + ft_strlen(" -> "), file->st.st_size + 1);
 	}
 	else
 		*buff = '\0';
@@ -172,8 +144,6 @@ char	*get_file_size(t_file *file, t_flags *flags)
 	ft_snprintf(buff, 64, "%*s%s", g_size_width + 1, buff, units[unit]);
 	return buff;
 }
-
-
 
 char	*get_file_datetime(t_file *file, t_flags *flags)
 {
@@ -212,6 +182,8 @@ char	*get_file_xattr(t_file *file)
 		*symb = '@';
 	else if (acl)
 		*symb = '+';
+	if (acl)
+		acl_free(acl);
 	return symb;
 }
 
@@ -229,8 +201,8 @@ char *get_char_dev(t_file *file)
 void	get_file_info(t_file *file, t_flags *flags)
 {
 	/* permissions - nlinks - user - group - file size - date - filename */
-	ft_printf("%s%s %*d %-*s %-*s %s %s%s %s%s\n",
-			  list_permissions(file->st), get_file_xattr(file),
+	ft_printf("%s%s %*d %-*s  %-*s %s %s%s %s%s\n",
+			  get_file_permissions(file->st), get_file_xattr(file),
 			  g_link_width, file->st.st_nlink,
 			  g_uid_width, file->pwd->pw_name,
 			  g_gid_width, file->grp->gr_name,
@@ -240,9 +212,6 @@ void	get_file_info(t_file *file, t_flags *flags)
 			  get_file_name(file), read_link_name(file));
 }
 
-#define LST_AS(type, e)							((type *)e->content)
-
-
 void	display_files(t_queue **files, t_flags *flags)
 {
 	t_queue		*sorted;
@@ -250,8 +219,8 @@ void	display_files(t_queue **files, t_flags *flags)
 	t_qnode		*e;
 	t_qnode		*tmp;
 
-	sorted = handle_sort(files, flags);
 	dirs = queue_init();
+	sorted = handle_sort(files, flags);
 	while (!queue_isempty(sorted))
 	{
 		tmp = queue_deq(sorted);
@@ -260,9 +229,9 @@ void	display_files(t_queue **files, t_flags *flags)
 		else
 			ft_printf("%s%s", get_file_name(QNODE_AS(t_file, tmp)),
 					  flags->one_per_line ? "\n" : " ");
-		if (ft_strcmp(".", QNODE_AS(t_file, tmp)->name)
-			&& ft_strcmp("..", QNODE_AS(t_file, tmp)->name)
-			&& flags->recursive && FILE_TYPE(QNODE_AS(t_file, tmp)->st, S_IFDIR))
+		if (flags->recursive && ft_strcmp(".", QNODE_AS(t_file, tmp)->name)
+				&& ft_strcmp("..", QNODE_AS(t_file, tmp)->name)
+			&& FILE_TYPE(QNODE_AS(t_file, tmp)->st, S_IFDIR))
 
 		{
 			queue_enq(dirs, queue_dry_node(QNODE_AS(t_file, tmp)->path,
@@ -309,13 +278,8 @@ void	ft_ls(const char *path, t_flags *flags)
 
 	if (lstat(path, &st) == -1)
 		return perror(path);
-
-	if (!flags->list)
-	{
-		if (stat(path, &st) == -1)
-			return perror(path);
-	}
-
+	if (!flags->list && stat(path, &st) == -1)
+		return perror(path);
 	if (!user_has_permission(path, st))
 		return ;
 
@@ -333,6 +297,7 @@ void	ft_ls(const char *path, t_flags *flags)
 
 		while ((node = readdir(repo)))
 		{
+
 			if (!flags->show_all && node->d_name[0] == '.')
 				continue ;
 			else if (!file_init(&file, path, node->d_name, !flags->list))
@@ -353,25 +318,79 @@ void	ft_ls(const char *path, t_flags *flags)
 	display_files(&files, flags);
 }
 
+bool	set_stat(const char *path, struct stat *st, t_flags *flags)
+{
+	if (lstat(path, st) == -1)
+	{
+		perror(path);
+		return false;
+	}
+    if (!flags->list && stat(path, st) == -1)
+	{
+		perror(path);
+		return false;
+	}
+	return true;
+}
+
+void queue_putstr(t_qnode *e)
+{
+	if (!e || !e->blob)
+		return;
+	ft_putendl(e->blob);
+}
+
+bool	prepare_args(int argc, char **argv, t_flags *flags)
+{
+	int			i;
+	t_qnode		*e;
+	t_queue		*files;
+	t_queue		*repos;
+	bool		flag;
+	struct stat st;
+
+	flag = false;
+	if ((i = parse_flags(argc ,argv, flags)) == argc)
+		return (false);
+	files = queue_init();
+	repos = queue_init();
+	while (i < argc)
+	{
+		if (set_stat(argv[i], &st, flags))
+			queue_enq(FILE_TYPE(st, S_IFDIR) ? repos : files,
+					  queue_dry_node(ft_strdup(argv[i]), sizeof(char *)));
+		else
+			flag = true;
+		i++;
+	}
+	handle_sort(&repos, flags);
+	handle_sort(&files, flags);
+	ft_putstr(!queue_isempty(files) && flag ? "\n" : "");
+	flag = !queue_isempty(files) || queue_size(repos) > 1;
+	while (!queue_isempty(files))
+	{
+		ft_ls((e = queue_deq(files))->blob, flags);
+		queue_node_del(&e, queue_del_helper);
+	}
+
+	while (!queue_isempty(repos))
+	{
+		e = queue_deq(repos);
+		if (flag)
+			ft_printf("\n%s:\n", e->blob);
+		ft_ls(e->blob, flags);
+		queue_node_del(&e, queue_dry_del_helper);
+	}
+	queue_del(&repos, queue_del_helper);
+	queue_del(&files, queue_del_helper);
+	return (true);
+}
+
 int		main(int argc, char *argv[])
 {
 	t_flags flags;
-	int		i;
-	char	cwd[512];
 
-	uid = geteuid();
-	pw = getpwuid(uid);
-
-	i = parse_flags(argc ,argv, &flags);
-	if (i < argc)
-		while (i < argc)
-			ft_ls(argv[i++], &flags);
-	else
-	{
-		if (!(getcwd(cwd, sizeof(cwd))))
-			perror("getcwd() error");
-		else
-			ft_ls(cwd, &flags);
-	}
-	return 0;
+	if (!prepare_args(argc, argv, &flags))
+		ft_ls(".", &flags);
+	return (0);
 }

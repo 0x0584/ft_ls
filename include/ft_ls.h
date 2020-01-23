@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:06:17 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/21 11:22:19 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/23 21:24:01 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,7 +51,7 @@ struct s_flags
 	bool sort_acc_time;			/* -u
 								 * if -lt ignore t.
 								 * if -l, show access sort by ascii */
-	bool human_size;
+	bool human_size;			/* -h */
 
 };
 
