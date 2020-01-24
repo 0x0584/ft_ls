@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:23:22 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/23 22:18:48 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/24 01:51:47 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -198,7 +198,7 @@ char *get_char_dev(t_file *file)
 	return buff;
 }
 
-void	get_file_info(t_file *file, t_flags *flags)
+void	display_file_list(t_file *file, t_flags *flags)
 {
 	/* permissions - nlinks - user - group - file size - date - filename */
 	ft_printf("%s%s %*d %-*s  %-*s %s %s%s %s%s\n",
@@ -212,49 +212,98 @@ void	get_file_info(t_file *file, t_flags *flags)
 			  get_file_name(file), read_link_name(file));
 }
 
-void	display_files(t_queue **files, t_flags *flags)
+void	display_file_column(t_queue *files, t_flags *flags, size_t i, size_t col)
+{
+	struct winsize	w;
+    size_t			nl;
+	t_qnode			*file;
+	t_qnode			**array;
+	size_t			size;
+	size_t			index;
+	size_t step;
+
+	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+	nl = w.ws_col / (col + 1);
+
+	if (flags->one_per_line)
+	{
+		while ( !queue_isempty(files))
+		{
+			file = queue_deq(files);
+			ft_putendl(get_file_name(QNODE_AS(t_file, file)));
+			queue_node_del(&file, queue_file_del);
+		}
+		return ;
+	}
+
+
+	array = queue_as_array(files, true, &size);
+	step = 0;
+	index = 0;
+	while (i < size)
+	{
+		/* index += */
+		file = array[index];
+		//ft_printf(" >> col size: %zu\n", col);
+		ft_printf("%s%#-*.zu%s", get_file_name(QNODE_AS(t_file, file)),
+				  (int)(col - ft_strlen(QNODE_AS(t_file, file)->name) - 1), 0,
+				  (i + 1) % nl == 0 ? "\n" : " ");
+		if (index + step < size)
+			index += (size / nl) + step;
+		else
+			index = ++step;
+
+		i++;
+	}
+	free(array);
+	ft_putchar('\n');
+}
+
+void	display_files(t_queue **files, t_flags *flags, size_t col)
 {
 	t_queue		*sorted;
 	t_queue		*dirs;
 	t_qnode		*e;
 	t_qnode		*tmp;
+	size_t		i = 0;
 
 	dirs = queue_init();
 	sorted = handle_sort(files, flags);
-	while (!queue_isempty(sorted))
-	{
-		tmp = queue_deq(sorted);
-		if (flags->list)
-			get_file_info(QNODE_AS(t_file, tmp), flags);
-		else
-			ft_printf("%s%s", get_file_name(QNODE_AS(t_file, tmp)),
-					  flags->one_per_line ? "\n" : " ");
-		if (flags->recursive && ft_strcmp(".", QNODE_AS(t_file, tmp)->name)
-				&& ft_strcmp("..", QNODE_AS(t_file, tmp)->name)
-			&& FILE_TYPE(QNODE_AS(t_file, tmp)->st, S_IFDIR))
-
-		{
-			queue_enq(dirs, queue_dry_node(QNODE_AS(t_file, tmp)->path,
-										   sizeof(char *)));
-			QNODE_AS(t_file, tmp)->path = NULL;
-		}
-		else
-		{
-			free(QNODE_AS(t_file, tmp)->path);
-			QNODE_AS(t_file, tmp)->path = NULL;
-		}
-		queue_node_del(&tmp, queue_file_del);
-	}
 	if (!flags->list)
-		ft_putchar('\n');
-	while (flags->recursive && !queue_isempty(dirs))
+		display_file_column(sorted, flags, i++, col);
+	else
 	{
-		e = queue_deq(dirs);
-		ft_ls(e->blob, flags);
-		queue_node_del(&e, queue_del_helper);
+		while (!queue_isempty(sorted))
+		{
+			tmp = queue_deq(sorted);
+
+			display_file_list(QNODE_AS(t_file, tmp), flags);
+
+			if (flags->recursive && ft_strcmp(".", QNODE_AS(t_file, tmp)->name)
+				&& ft_strcmp("..", QNODE_AS(t_file, tmp)->name)
+				&& FILE_TYPE(QNODE_AS(t_file, tmp)->st, S_IFDIR))
+
+			{
+				queue_enq(dirs, queue_dry_node(QNODE_AS(t_file, tmp)->path,
+											   sizeof(char *)));
+				QNODE_AS(t_file, tmp)->path = NULL;
+			}
+			else
+			{
+				free(QNODE_AS(t_file, tmp)->path);
+				QNODE_AS(t_file, tmp)->path = NULL;
+			}
+			queue_node_del(&tmp, queue_file_del);
+		}
+		while (flags->recursive && !queue_isempty(dirs))
+		{
+			e = queue_deq(dirs);
+			ft_ls(e->blob, flags);
+			queue_node_del(&e, queue_del_helper);
+		}
 	}
 	queue_del(&dirs, queue_del_helper);
-	queue_del(&sorted, queue_del_helper);
+	queue_del(&sorted, queue_file_del);
 }
 
 bool	user_has_permission(const char *path, struct stat st)
@@ -275,21 +324,23 @@ void	ft_ls(const char *path, t_flags *flags)
 	struct stat		st;
 	t_file			file;
 	t_queue			*files;
+	size_t			column_size;
 
 	if (lstat(path, &st) == -1)
 		return perror(path);
 	if (!flags->list && stat(path, &st) == -1)
 		return perror(path);
-	if (!user_has_permission(path, st))
-		return ;
 
 	files = queue_init();
 
 	g_link_width = 1;
 	g_size_width = 1;
-
+	column_size = 1;
 	if (FILE_TYPE(st, S_IFDIR))	/* if directory */
 	{
+		if (!user_has_permission(path, st))
+			return ;
+
 		repo = opendir(path);
 
 		if (flags->recursive)
@@ -303,6 +354,7 @@ void	ft_ls(const char *path, t_flags *flags)
 			else if (!file_init(&file, path, node->d_name, !flags->list))
 				return perror(file.name);
 
+			column_size = MAX(ft_strlen(node->d_name) + 1, column_size);
 			queue_enq(files, queue_node(&file, sizeof(t_file)));
 
 			g_link_width = MAX(g_link_width, ft_digitcount(file.st.st_nlink));
@@ -315,7 +367,7 @@ void	ft_ls(const char *path, t_flags *flags)
 		return (perror(path));
 	else
 		queue_enq(files, queue_node(&file, sizeof(t_file)));
-	display_files(&files, flags);
+	display_files(&files, flags, column_size);
 }
 
 bool	set_stat(const char *path, struct stat *st, t_flags *flags)
@@ -372,14 +424,13 @@ bool	prepare_args(int argc, char **argv, t_flags *flags)
 		ft_ls((e = queue_deq(files))->blob, flags);
 		queue_node_del(&e, queue_del_helper);
 	}
-
 	while (!queue_isempty(repos))
 	{
 		e = queue_deq(repos);
 		if (flag)
 			ft_printf("\n%s:\n", e->blob);
 		ft_ls(e->blob, flags);
-		queue_node_del(&e, queue_dry_del_helper);
+		queue_node_del(&e, queue_del_helper);
 	}
 	queue_del(&repos, queue_del_helper);
 	queue_del(&files, queue_del_helper);
