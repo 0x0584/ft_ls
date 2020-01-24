@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/01/17 21:07:43 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/24 00:16:27 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/25 20:31:29 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,9 +40,10 @@
 
 extern int				g_link_width;
 extern int				g_size_width;
+extern int				g_column_width;
 extern int				g_uid_width;
 extern int				g_gid_width;
-extern uid_t			uid;
-extern struct passwd	*pw;
+
+typedef struct s_flags	t_flags;
 
 #endif /* COMMON_H */

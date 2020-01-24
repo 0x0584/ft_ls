@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:06:17 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/24 00:53:40 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/25 23:26:39 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@ enum e_ls_flags
 	FLAG_ONE_PER_LINE = '1',
 
 	FLAG_SHOW_ALL = 'a',
+	FLAG_SHOW_ALMOST_ALL = 'A',
 
 	FLAG_RECURSIVE = 'R',
 
@@ -31,7 +32,7 @@ enum e_ls_flags
 	FLAG_HUMAN_SIZE = 'h'
 };
 
-typedef struct s_flags	t_flags;
+void	put_flag(bool flag);
 struct s_flags
 {
 
@@ -44,6 +45,7 @@ struct s_flags
 	bool list_dirs;				/* -d
 								 * do not dereference links*/
 	bool show_all;				/* -a */
+	bool show_almost;			/* -A */
 	bool recursive;				/* -R */
 
 	bool sort_rev;				/* -r */
@@ -53,14 +55,7 @@ struct s_flags
 								 * if -l, show access sort by ascii */
 	bool human_size;			/* -h */
 
-};
 
-typedef struct s_ls_info	t_info;
-struct s_ls_info
-{
-	t_queue		*files;
-	int			link_offset;
-	int			size_offset;
 };
 
 void						ft_ls(const char *path, t_flags *flags);

@@ -6,23 +6,42 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:23:22 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/24 13:54:16 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/25 23:39:02 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-/* gcc -Wall -Wextra src/\*.c -o ft_ls -Iinclude -Ilibft -Llibft -lft */
+#include "display.h"
 
-#include "ft_ls.h"
+int		g_link_width = 1;
+int		g_size_width = 1;
+int		g_column_width = 1;
+int		g_uid_width = 1;
+int		g_gid_width = 1;
 
-uid_t			uid;
-struct passwd	*pw;
+void	set_flag(char flag, t_flags *flags)
+{
+	if (flag == FLAG_LIST)
+		flags->list = true;
+	else if (flag == FLAG_ONE_PER_LINE)
+		flags->one_per_line = true;
+	else if (flag == FLAG_HUMAN_SIZE)
+		flags->human_size = true;
+	else if (flag == FLAG_SHOW_ALL)
+		flags->show_all = true;
+	else if (flag == FLAG_SHOW_ALMOST_ALL)
+		flags->show_almost = true;
+	else if (flag == FLAG_RECURSIVE)
+		flags->recursive = true;
+	else if (flag == FLAG_SORT_REV)
+		flags->sort_rev = true;
+	else if (flag == FLAG_SORT_ACC_TIME)
+		flags->sort_acc_time = true;
+	else if (flag == FLAG_SORT_MOD_TIME)
+		flags->sort_mod_time = true;
 
-int				g_link_width = 1;
-int				g_size_width = 1;
-int				g_uid_width = 1;
-int				g_gid_width = 1;
+}
 
-int			parse_flags(int ac, char **av, t_flags *flags)
+int		parse_flags(int ac, char **av, t_flags *flags)
 {
 	int i;
 	int j;
@@ -36,279 +55,13 @@ int			parse_flags(int ac, char **av, t_flags *flags)
 		j = 0;
 		if (av[i][j] != '-')
 			break ;
+		else if (!ft_strcmp(av[i], "--"))
+			return (i + 1);
 		while (av[i][j++])
-		{
-			if (av[i][j] == FLAG_LIST)
-				flags->list = true;
-			else if (av[i][j] == FLAG_ONE_PER_LINE)
-				flags->one_per_line = true;
-			else if (av[i][j] == FLAG_HUMAN_SIZE)
-				flags->human_size = true;
-			else if (av[i][j] == FLAG_SHOW_ALL)
-				flags->show_all = true;
-			else if (av[i][j] == FLAG_RECURSIVE)
-				flags->recursive = true;
-			else if (av[i][j] == FLAG_SORT_REV)
-				flags->sort_rev = true;
-			else if (av[i][j] == FLAG_SORT_ACC_TIME)
-				flags->sort_acc_time = true;
-			else if (av[i][j] == FLAG_SORT_MOD_TIME)
-				flags->sort_mod_time = true;
-		}
+			set_flag(av[i][j], flags);
 		i++;
 	}
 	return (i);
-}
-
-static char	get_file_type(struct stat s)
-{
-	if (FILE_TYPE(s, S_IFBLK))
-		return 'b';
-	else if (FILE_TYPE(s, S_IFCHR))
-		return 'c';
-	else if (FILE_TYPE(s, S_IFLNK))
-		return 'l';
-	else if (FILE_TYPE(s, S_IFDIR))
-		return 'd';
-	else if (FILE_TYPE(s, S_IFIFO))
-		return 'p';
-	else if (FILE_TYPE(s, S_IFREG))
-		return '-';
-	else if (FILE_TYPE(s, S_IFSOCK))
-		return 's';
-	return '?';
-}
-
-static char *get_file_permissions(struct stat s)
-{
-    static const char *rwx[] = {
-		"---", "--x", "-w-", "-wx",
-		"r--", "r-x", "rw-", "rwx"
-	};
-    static char bits[11];
-
-    bits[0] = get_file_type(s);
-    ft_strcpy(&bits[1], rwx[(s.st_mode >> 6) & 7]);
-    ft_strcpy(&bits[4], rwx[(s.st_mode >> 3) & 7]);
-    ft_strcpy(&bits[7], rwx[(s.st_mode & 7)]);
-    if (s.st_mode & S_ISUID)
-        bits[3] = (s.st_mode & S_IXUSR) ? 's' : 'S';
-    if (s.st_mode & S_ISGID)
-        bits[6] = (s.st_mode & S_IXGRP) ? 's' : 'l';
-    if (s.st_mode & S_ISVTX)
-        bits[9] = (s.st_mode & S_IXOTH) ? 't' : 'T';
-    bits[10] = '\0';
-    return(bits);
-}
-
-static char		*read_link_name(t_file *file)
-{
-	static char buff[256] = {0};
-
-	ft_bzero(buff, 256);
-	if (file->islnk)
-	{
-		ft_strcpy(buff, " -> ");
-		readlink(file->path, buff + ft_strlen(" -> "), file->st.st_size + 1);
-	}
-	else
-		*buff = '\0';
-	return (buff);
-}
-
-char	*get_file_size(t_file *file, t_flags *flags)
-{
-	static char buff[64] = {0};
-	static char *units[] = {"", "B", "K", "M", "G", "T", "E", "Z"};
-	double size;
-	size_t unit;
-
-	unit = 0;
-	size = file->st.st_size;
-	if (flags->human_size)
-	{
-		unit++;
-		while (size / 1024 >= 1)
-		{
-			size /= 1024;
-			unit++;
-		}
-		ft_snprintf(buff, 64, "%.1lf", size);
-	}
-	else
-	{
-		ft_snprintf(buff, 64, "%lld", file->st.st_size);
-	}
-	ft_snprintf(buff, 64, "%*s%s", g_size_width + 1, buff, units[unit]);
-	return buff;
-}
-
-char	*get_file_datetime(t_file *file, t_flags *flags)
-{
-	static char buff[13];
-	time_t now;
-	time_t t;
-	char *stime;
-
-	int lastchange;
-
-	ft_bzero(buff, 13);
-	now = time(NULL);
-	t = flags->sort_acc_time ? file->st.st_atime : file->st.st_mtime;
-	stime = ctime(&t);
-	lastchange = 11;
-	if (now - t >= SIXMONTHS)
-		lastchange += 8;
-	ft_snprintf(buff, 13, "%.7s%.5s", stime + 4, stime + lastchange);
-	return buff;
-}
-
-char	*get_file_xattr(t_file *file)
-{
-	static char symb[2] = {0, 0};
-	acl_t acl;
-	acl_entry_t tmp;
-
-	*symb = ' ';
-	acl = acl_get_link_np(file->path, ACL_TYPE_EXTENDED);
-	if (acl && acl_get_entry(acl, ACL_FIRST_ENTRY, &tmp) == -1)
-	{
-		acl_free(acl);
-		return symb;
-	}
-	if (listxattr(file->path, NULL, 0, XATTR_NOFOLLOW) > 0)
-		*symb = '@';
-	else if (acl)
-		*symb = '+';
-	if (acl)
-		acl_free(acl);
-	return symb;
-}
-
-char *get_char_dev(t_file *file)
-{
-	static char buff[64];
-
-	ft_bzero(buff, 64);
-	if (FILE_TYPE(file->st, S_IFCHR))
-		ft_snprintf(buff, 64, "%3d, %3d ", major(file->st.st_rdev),
-					minor(file->st.st_rdev));
-	return buff;
-}
-
-void	enqueue_dirs(t_queue *dirs, t_file *file, t_flags *flags)
-{
-	if (flags->recursive && FILE_TYPE(file->st, S_IFDIR)
-			&& ft_strcmp(".", file->name) && ft_strcmp("..", file->name))
-	{
-		queue_enq(dirs, queue_dry_node(file->path, sizeof(char *)));
-		file->path = NULL;
-		return ;
-	}
-	free(file->path);
-	file->path = NULL;
-}
-
-void	display_files_list(t_queue *files, t_queue *dirs, t_flags *flags)
-{
-	t_qnode *tmp;
-	t_file *file;
-
-	while (!queue_isempty(files))
-	{
-		tmp = queue_deq(files);
-		file = QNODE_AS(t_file, tmp);
-		enqueue_dirs(dirs, file, flags);
-		/* permissions - nlinks - user - group - file size - date - filename */
-		ft_printf("%s%s %*d %-*s  %-*s %s %s%s %s%s\n",
-				  get_file_permissions(file->st), get_file_xattr(file),
-				  g_link_width, file->st.st_nlink,
-				  g_uid_width, file->pwd->pw_name,
-				  g_gid_width, file->grp->gr_name,
-				  get_file_size(file, flags),
-				  get_char_dev(file),
-				  get_file_datetime(file, flags),
-				  get_file_name(file), read_link_name(file));
-		queue_node_del(&tmp, queue_file_del);
-	}
-}
-
-
-void	display_files_column(t_queue *files, t_queue *dirs, t_flags *flags,
-								size_t max_col)
-{
-	struct winsize	w;
-    size_t			nl;
-	t_qnode			**array;
-	size_t			size;
-	t_file			*file;
-	size_t			i;
-	size_t			index;
-	size_t			base;
-
-
-	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-	nl = w.ws_col / (max_col + 1);
-
-	i = 0;
-	index = 0;
-	base = 1;
-	array = queue_as_array(files, true, &size);
-	while (i < size)
-	{
-		i++;
-		file = QNODE_AS(t_file, array[index]);
-		enqueue_dirs(dirs, file, flags);
-		ft_printf("%s%#-*.zu%s", get_file_name(file),
-				  (int)(max_col - ft_strlen(file->name) - 1), 0,
-				  i % (nl + 1) == 0 ? "\n": " ");
-		if (index + (size / nl) < size)
-			index += (size / nl);
-		else
-			index = base++;
-
-	}
-	free(array);
-	ft_putstr(i % (nl + 1) ? "\n" : "");
-}
-
-void	display_files_oneline(t_queue *files, t_queue *dirs, t_flags *flags)
-{
-	t_qnode *file;
-
-	while ( !queue_isempty(files))
-	{
-		file = queue_deq(files);
-		enqueue_dirs(dirs, QNODE_AS(t_file, file), flags);
-		ft_putendl(get_file_name(QNODE_AS(t_file, file)));
-		queue_node_del(&file, queue_file_del);
-	}
-}
-
-void	display_files(t_queue **files, t_flags *flags, size_t col)
-{
-	t_queue		*sorted;
-	t_queue		*dirs;
-	t_qnode		*e;
-
-	dirs = queue_init();
-	sorted = handle_sort(files, flags);
-
-	if (flags->list)
-		display_files_list(sorted, dirs, flags);
-	else if (flags->one_per_line)
-		display_files_oneline(sorted, dirs, flags);
-	else
-		display_files_column(sorted, dirs, flags, col);
-
-	while (flags->recursive && !queue_isempty(dirs))
-	{
-		e = queue_deq(dirs);
-		ft_ls(e->blob, flags);
-		queue_node_del(&e, queue_del_helper);
-	}
-	queue_del(&dirs, queue_del_helper);
-	queue_del(&sorted, queue_file_del);
 }
 
 bool	user_has_permission(const char *path, struct stat st)
@@ -316,63 +69,78 @@ bool	user_has_permission(const char *path, struct stat st)
 	char *tmp;
 
 	if (st.st_mode & S_IRGRP)
-		return true;
+		return (true);
 	tmp = ft_strrchr(path, '/');
 	ft_printf("ls: %s: Permission denied\n", tmp ? tmp + 1 : path);
-	return false;
+	return (false);
+}
+
+void	raise_error(t_queue **files, const char *path)
+{
+	if (path)
+		perror(path);
+	queue_del(files, queue_file_del);
+}
+
+void	set_widths(struct stat st, const char *name)
+{
+	g_column_width = MAX((int)ft_strlen(name) + 1, g_column_width);
+	g_link_width = MAX(g_link_width, ft_digitcount(st.st_nlink));
+	g_size_width = MAX(g_size_width, ft_digitcount(st.st_size));
+}
+
+void	ft_ls_dir(struct stat st, t_queue **files,
+					const char *path, t_flags *flags)
+{
+	DIR				*repo;
+	struct dirent	*node;
+	t_file			file;
+
+	if (flags->recursive && ft_strcmp(path, "."))
+		ft_printf("\n%s:\n", path);
+	if (!user_has_permission(path, st))
+		return (raise_error(files, NULL));
+	repo = opendir(path);
+	while ((node = readdir(repo)))
+	{
+		if (!(flags->show_all || flags->show_almost) && node->d_name[0] == '.')
+			continue ;
+		if (flags->show_almost && (!ft_strcmp(".", node->d_name)
+									|| !ft_strcmp("..", node->d_name)))
+			continue;
+		else if (!file_init(&file, path, node->d_name, false))
+			return (raise_error(files, file.name));
+		queue_enq(*files, queue_node(&file, sizeof(t_file)));
+		set_widths(file.st, node->d_name);
+	}
+	closedir(repo);
 }
 
 void	ft_ls(const char *path, t_flags *flags)
 {
-	DIR				*repo;		/* the actual directory */
-	struct dirent	*node;		/* node node */
 	struct stat		st;
 	t_file			file;
 	t_queue			*files;
-	size_t			column_size;
-
-	if (lstat(path, &st) == -1)
-		return perror(path);
-	if (!flags->list && stat(path, &st) == -1)
-		return perror(path);
 
 	files = queue_init();
-
+	if (lstat(path, &st) == -1)
+		return (raise_error(&files, path));
+	if (!flags->list && stat(path, &st) == -1)
+		return (raise_error(&files, path));
 	g_link_width = 1;
 	g_size_width = 1;
-	column_size = 1;
-	if (FILE_TYPE(st, S_IFDIR))	/* if directory */
+	g_column_width = 1;
+	if (FILE_TYPE(st, S_IFDIR))
 	{
-		if (!user_has_permission(path, st))
+		ft_ls_dir(st, &files, path, flags);
+		if (files == NULL)
 			return ;
-
-		repo = opendir(path);
-
-		if (flags->recursive)
-			ft_printf("\n%s:\n", path);
-
-		while ((node = readdir(repo)))
-		{
-
-			if (!flags->show_all && node->d_name[0] == '.')
-				continue ;
-			else if (!file_init(&file, path, node->d_name, !flags->list))
-				return perror(file.name);
-
-			column_size = MAX(ft_strlen(node->d_name) + 1, column_size);
-			queue_enq(files, queue_node(&file, sizeof(t_file)));
-
-			g_link_width = MAX(g_link_width, ft_digitcount(file.st.st_nlink));
-			g_size_width = MAX(g_size_width, ft_digitcount(file.st.st_size));
-		}
-
-		closedir(repo);
 	}
-	else if (!file_init(&file, path, path, !flags->list))
-		return (perror(path));
+	else if (!file_init(&file, path, NULL, !flags->list))
+		return (raise_error(&files, path));
 	else
 		queue_enq(files, queue_node(&file, sizeof(t_file)));
-	display_files(&files, flags, column_size);
+	display_files(&files, flags);
 }
 
 bool	set_stat(const char *path, struct stat *st, t_flags *flags)
@@ -380,48 +148,20 @@ bool	set_stat(const char *path, struct stat *st, t_flags *flags)
 	if (lstat(path, st) == -1)
 	{
 		perror(path);
-		return false;
+		return (false);
 	}
-    if (!flags->list && stat(path, st) == -1)
+	if (!flags->list && stat(path, st) == -1)
 	{
 		perror(path);
-		return false;
-	}
-	return true;
-}
-
-void queue_putstr(t_qnode *e)
-{
-	if (!e || !e->blob)
-		return;
-	ft_putendl(e->blob);
-}
-
-bool	prepare_args(int argc, char **argv, t_flags *flags)
-{
-	int			i;
-	t_qnode		*e;
-	t_queue		*files;
-	t_queue		*repos;
-	bool		flag;
-	struct stat st;
-
-	flag = false;
-	if ((i = parse_flags(argc ,argv, flags)) == argc)
 		return (false);
-	files = queue_init();
-	repos = queue_init();
-	while (i < argc)
-	{
-		if (set_stat(argv[i], &st, flags))
-			queue_enq(FILE_TYPE(st, S_IFDIR) ? repos : files,
-					  queue_dry_node(ft_strdup(argv[i]), sizeof(char *)));
-		else
-			flag = true;
-		i++;
 	}
-	handle_sort(&repos, flags);
-	handle_sort(&files, flags);
+	return (true);
+}
+
+void	handle_files(t_queue *files, t_queue *repos, t_flags *flags, bool flag)
+{
+	t_qnode *e;
+
 	ft_putstr(!queue_isempty(files) && flag ? "\n" : "");
 	flag = !queue_isempty(files) || queue_size(repos) > 1;
 	while (!queue_isempty(files))
@@ -432,11 +172,38 @@ bool	prepare_args(int argc, char **argv, t_flags *flags)
 	while (!queue_isempty(repos))
 	{
 		e = queue_deq(repos);
-		if (flag)
+		if (flag && !flags->recursive)
 			ft_printf("\n%s:\n", e->blob);
 		ft_ls(e->blob, flags);
 		queue_node_del(&e, queue_del_helper);
 	}
+}
+
+bool	prepare_args(int argc, char **argv, t_flags *flags)
+{
+	struct stat st;
+	int			i;
+	t_queue		*files;
+	t_queue		*repos;
+	bool		flag;
+
+	flag = false;
+	if ((i = parse_flags(argc, argv, flags)) == argc)
+		return (false);
+	files = queue_init();
+	repos = queue_init();
+	while (i < argc)
+	{
+		if (set_stat(argv[i], &st, flags))
+			queue_enq(FILE_TYPE(st, S_IFDIR) ? repos : files,
+						queue_dry_node(ft_strdup(argv[i]), sizeof(char *)));
+		else
+			flag = true;
+		i++;
+	}
+	handle_sort(&repos, flags);
+	handle_sort(&files, flags);
+	handle_files(files, repos, flags, flag);
 	queue_del(&repos, queue_del_helper);
 	queue_del(&files, queue_del_helper);
 	return (true);

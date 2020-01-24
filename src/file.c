@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/11 01:02:15 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/23 20:30:55 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/25 22:14:33 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,32 +23,37 @@ static char	*get_file_color(struct stat s)
 	else if (FILE_TYPE(s, S_IFLNK))
 		return get_color_name(FG_CYAN);
 	else if ((s.st_mode >> 6) & 1 || (s.st_mode >> 3) & 1 || s.st_mode & 1)
-		return get_color_name(FG_MAGENTA);
+		return get_color_name(FG_GREEN);
 	return get_color_name(DIM);
 }
 
 bool	file_init(t_file *file, const char *path, const char *name,
 					bool get_link_info)
 {
-	if (path == name)
-	{
-		file->path = ft_strdup(path);
-		file->name = ft_strdup(name);
-	}
-	else
+	if (name)
 	{
 		file->path = ft_strjoin(path, "/");
 		ft_strappend(&file->path, name);
 		file->name = ft_strdup(name);
 	}
+	else
+	{
+		file->path = ft_strdup(path);
+		file->name = ft_strdup(path);
+	}
 	file->islnk = false;
 	if (get_link_info && stat(file->path, &file->st) == -1)
-		return false;
+	{
+		ft_putendl("a");
+		return (false);
+	}
 	else if (lstat(file->path, &file->st) == -1)
-		return false;
+	{
+		ft_putendl("b");
+		return (false);
+	}
 	else if (FILE_TYPE(file->st, S_IFLNK))
 		file->islnk = true;
-
 	file->color = get_file_color(file->st);
 	file->pwd = getpwuid(file->st.st_uid);
 	file->grp = getgrgid(file->st.st_gid);
