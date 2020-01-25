@@ -6,11 +6,13 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/01/24 14:39:17 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/25 23:24:06 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/26 00:57:00 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ft_ls.h"
+#include "display.h"
+
+int		g_nl;
 
 void	enqueue_dirs(t_queue *dirs, t_file *file, t_flags *flags)
 {
@@ -22,68 +24,63 @@ void	enqueue_dirs(t_queue *dirs, t_file *file, t_flags *flags)
 void	display_files_list(t_queue *files, t_queue *dirs, t_flags *flags)
 {
 	t_qnode *tmp;
-	t_file *file;
+	t_file	*file;
 
-	while (!queue_isempty(files))
+	while (!QUEUE_ISEMPTY(files))
 	{
 		tmp = queue_deq(files);
 		file = QNODE_AS(t_file, tmp);
 		enqueue_dirs(dirs, file, flags);
 		ft_printf("%s%s %*d %-*s  %-*s %s %s%s %s%s\n",
-				  get_file_permissions(file->st), get_file_xattr(file),
-				  g_link_width, file->st.st_nlink,
-				  g_uid_width, file->pwd->pw_name,
-				  g_gid_width, file->grp->gr_name,
-				  get_file_size(file, flags),
-				  get_char_dev(file),
-				  get_file_datetime(file, flags),
-				  get_file_name(file), read_link_name(file));
+					get_file_permissions(file->st), get_file_xattr(file),
+					g_link_width, file->st.st_nlink,
+					g_uid_width, file->pwd->pw_name,
+					g_gid_width, file->grp->gr_name,
+					get_file_size(file, flags),
+					get_char_dev(file),
+					get_file_datetime(file, flags),
+					get_file_name(file), read_link_name(file));
 		queue_node_del(&tmp, queue_file_del);
 	}
 }
 
-static size_t get_step(size_t size, size_t nl)
+size_t	get_nl(void)
 {
-	return (size / nl) + (size % nl != 0);
+	struct winsize	w;
+	static bool		set = false;
+
+	if (!set)
+	{
+		ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+		set = true;
+	}
+	return (w.ws_col / (g_column_width + 1));
 }
 
 void	display_files_column(t_queue *files, t_queue *dirs, t_flags *flags)
 {
-	struct winsize	w;
-    size_t			nl;
 	t_qnode			**array;
 	size_t			size;
-	t_file			*file;
 	size_t			i;
 	size_t			index;
 	size_t			base;
-
-
-	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-	nl = w.ws_col / (g_column_width + 1);
 
 	i = 0;
 	index = 0;
 	base = 1;
 	array = queue_as_array(files, true, &size);
-	while (i < size)
+	g_nl = get_nl();
+	while (i++ < size)
 	{
-		i++;
-		file = QNODE_AS(t_file, array[index]);
-		enqueue_dirs(dirs, file, flags);
-		ft_printf("%s%#-*.zu", get_file_name(file),
-				  (int)(g_column_width - ft_strlen(file->name) - 1), 0);
-		if (index + get_step(size, nl) < size)
-		{
-			index += get_step(size, nl);
-			ft_putstr(" ");
-		}
+		enqueue_dirs(dirs, QNODE_AS(t_file, array[index]), flags);
+		ft_printf("%s%#-*.zu%s", get_file_name(QNODE_AS(t_file, array[index])),
+					(int)(g_column_width
+					- ft_strlen(QNODE_AS(t_file, array[index])->name) - 1), 0,
+					index + GET_STEP(size, g_nl) < size ? " " : "\n");
+		if (index + GET_STEP(size, g_nl) < size)
+			index += GET_STEP(size, g_nl);
 		else
-		{
 			index = base++;
-			ft_putstr("\n");
-		}
-
 	}
 	free(array);
 }
@@ -92,19 +89,13 @@ void	display_files_oneline(t_queue *files, t_queue *dirs, t_flags *flags)
 {
 	t_qnode *file;
 
-	while ( !queue_isempty(files))
+	while (!QUEUE_ISEMPTY(files))
 	{
 		file = queue_deq(files);
 		enqueue_dirs(dirs, QNODE_AS(t_file, file), flags);
 		ft_putendl(get_file_name(QNODE_AS(t_file, file)));
 		queue_node_del(&file, queue_file_del);
-
 	}
-}
-
-void	put_flag(bool flag)
-{
-	ft_printf("->  %s\n", flag ? "set" : "none");
 }
 
 void	display_files(t_queue **files, t_flags *flags)
@@ -122,7 +113,7 @@ void	display_files(t_queue **files, t_flags *flags)
 	else
 		display_files_column(sorted, dirs, flags);
 	queue_del(&sorted, queue_file_del);
-	while (flags->recursive && !queue_isempty(dirs))
+	while (flags->recursive && !QUEUE_ISEMPTY(dirs))
 	{
 		e = queue_deq(dirs);
 		ft_ls(e->blob, flags);

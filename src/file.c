@@ -6,29 +6,29 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/11 01:02:15 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/25 22:14:33 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/26 00:11:31 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ft_ls.h"
 #include "colors.h"
 
-static char	*get_file_color(struct stat s)
+char	*get_file_color(struct stat s)
 {
 	if (FILE_TYPE(s, S_IFBLK) || FILE_TYPE(s, S_IFCHR)
 			|| FILE_TYPE(s, S_IFIFO) || FILE_TYPE(s, S_IFSOCK))
-		return get_color_name(BLINK);
+		return (get_color_name(BLINK));
 	else if (FILE_TYPE(s, S_IFDIR))
-		return get_color_name(BOLD);
+		return (get_color_name(BOLD));
 	else if (FILE_TYPE(s, S_IFLNK))
-		return get_color_name(FG_CYAN);
+		return (get_color_name(FG_CYAN));
 	else if ((s.st_mode >> 6) & 1 || (s.st_mode >> 3) & 1 || s.st_mode & 1)
-		return get_color_name(FG_GREEN);
-	return get_color_name(DIM);
+		return (get_color_name(FG_MAGENTA));
+	return (get_color_name(DIM));
 }
 
 bool	file_init(t_file *file, const char *path, const char *name,
-					bool get_link_info)
+						bool get_link_info)
 {
 	if (name)
 	{
@@ -43,15 +43,9 @@ bool	file_init(t_file *file, const char *path, const char *name,
 	}
 	file->islnk = false;
 	if (get_link_info && stat(file->path, &file->st) == -1)
-	{
-		ft_putendl("a");
 		return (false);
-	}
 	else if (lstat(file->path, &file->st) == -1)
-	{
-		ft_putendl("b");
 		return (false);
-	}
 	else if (FILE_TYPE(file->st, S_IFLNK))
 		file->islnk = true;
 	file->color = get_file_color(file->st);
@@ -80,10 +74,10 @@ char	*get_file_name(t_file *file)
 	ft_snprintf(name, 256 + 32, "%%{%s}%s%%{%s}", file->color,
 				file->name, "reset");
 	ft_snprintf(name, 256 + 32, name);
-	return name;
+	return (name);
 }
 
-void file_del(t_file **f)
+void	file_del(t_file **f)
 {
 	if (!f || !*f)
 		return ;
@@ -91,10 +85,9 @@ void file_del(t_file **f)
 	ft_strdel(&(*f)->name);
 	free(*f);
 	*f = NULL;
-
 }
 
-void queue_file_del(void *e, size_t size)
+void	queue_file_del(void *e, size_t size)
 {
 	t_file *f;
 

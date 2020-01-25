@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:23:22 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/25 23:39:02 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/26 00:57:31 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,6 @@ void	set_flag(char flag, t_flags *flags)
 		flags->sort_acc_time = true;
 	else if (flag == FLAG_SORT_MOD_TIME)
 		flags->sort_mod_time = true;
-
 }
 
 int		parse_flags(int ac, char **av, t_flags *flags)
@@ -143,16 +142,18 @@ void	ft_ls(const char *path, t_flags *flags)
 	display_files(&files, flags);
 }
 
-bool	set_stat(const char *path, struct stat *st, t_flags *flags)
+bool	set_stat(const char *path, struct stat *st, t_flags *flags, bool *error)
 {
 	if (lstat(path, st) == -1)
 	{
 		perror(path);
+		*error = true;
 		return (false);
 	}
 	if (!flags->list && stat(path, st) == -1)
 	{
 		perror(path);
+		*error = true;
 		return (false);
 	}
 	return (true);
@@ -162,14 +163,14 @@ void	handle_files(t_queue *files, t_queue *repos, t_flags *flags, bool flag)
 {
 	t_qnode *e;
 
-	ft_putstr(!queue_isempty(files) && flag ? "\n" : "");
-	flag = !queue_isempty(files) || queue_size(repos) > 1;
-	while (!queue_isempty(files))
+	ft_putstr(!QUEUE_ISEMPTY(files) && flag ? "\n" : "");
+	flag = !QUEUE_ISEMPTY(files) || queue_size(repos) > 1;
+	while (!QUEUE_ISEMPTY(files))
 	{
 		ft_ls((e = queue_deq(files))->blob, flags);
 		queue_node_del(&e, queue_del_helper);
 	}
-	while (!queue_isempty(repos))
+	while (!QUEUE_ISEMPTY(repos))
 	{
 		e = queue_deq(repos);
 		if (flag && !flags->recursive)
@@ -194,11 +195,9 @@ bool	prepare_args(int argc, char **argv, t_flags *flags)
 	repos = queue_init();
 	while (i < argc)
 	{
-		if (set_stat(argv[i], &st, flags))
+		if (set_stat(argv[i], &st, flags, &flag))
 			queue_enq(FILE_TYPE(st, S_IFDIR) ? repos : files,
 						queue_dry_node(ft_strdup(argv[i]), sizeof(char *)));
-		else
-			flag = true;
 		i++;
 	}
 	handle_sort(&repos, flags);

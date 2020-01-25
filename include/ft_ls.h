@@ -6,16 +6,16 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:06:17 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/25 23:26:39 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/26 00:35:00 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef FT_LS_H
-#define FT_LS_H
+# define FT_LS_H
 
-#include "file.h"
+# include "file.h"
 
-enum e_ls_flags
+enum					e_ls_flags
 {
 	FLAG_LIST = 'l',
 	FLAG_ONE_PER_LINE = '1',
@@ -32,33 +32,28 @@ enum e_ls_flags
 	FLAG_HUMAN_SIZE = 'h'
 };
 
-void	put_flag(bool flag);
-struct s_flags
+struct					s_flags
 {
+	bool list;
+	bool one_per_line;
+	bool not_owner;
+	bool dir_order;
+	bool flag_f;
 
-	bool list;					/* -l */
-	bool one_per_line;			/* -1 */
-	bool not_owner;				/* -g */
-	bool dir_order;				/* -U */
-	bool flag_f;				/* -f
-								 * enables -aU, disable -ls --color */
-	bool list_dirs;				/* -d
-								 * do not dereference links*/
-	bool show_all;				/* -a */
-	bool show_almost;			/* -A */
-	bool recursive;				/* -R */
+	bool list_dirs;
 
-	bool sort_rev;				/* -r */
-	bool sort_mod_time;			/* -t */
-	bool sort_acc_time;			/* -u
-								 * if -lt ignore t.
-								 * if -l, show access sort by ascii */
-	bool human_size;			/* -h */
+	bool show_all;
+	bool show_almost;
+	bool recursive;
 
+	bool sort_rev;
+	bool sort_mod_time;
+	bool sort_acc_time;
 
+	bool human_size;
 };
 
-void						ft_ls(const char *path, t_flags *flags);
-t_queue						*handle_sort(t_queue **aqueue, t_flags *flags);
+void					ft_ls(const char *path, t_flags *flags);
+t_queue					*handle_sort(t_queue **aqueue, t_flags *flags);
 
 #endif
