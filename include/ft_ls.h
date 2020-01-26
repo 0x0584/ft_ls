@@ -6,16 +6,16 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:06:17 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/25 23:26:39 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/26 18:57:11 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef FT_LS_H
-#define FT_LS_H
+# define FT_LS_H
 
-#include "file.h"
+# include "file.h"
 
-enum e_ls_flags
+enum						e_ls_flags
 {
 	FLAG_LIST = 'l',
 	FLAG_ONE_PER_LINE = '1',
@@ -32,33 +32,62 @@ enum e_ls_flags
 	FLAG_HUMAN_SIZE = 'h'
 };
 
-void	put_flag(bool flag);
-struct s_flags
+struct						s_flags
 {
 
-	bool list;					/* -l */
-	bool one_per_line;			/* -1 */
-	bool not_owner;				/* -g */
-	bool dir_order;				/* -U */
-	bool flag_f;				/* -f
-								 * enables -aU, disable -ls --color */
-	bool list_dirs;				/* -d
-								 * do not dereference links*/
-	bool show_all;				/* -a */
-	bool show_almost;			/* -A */
-	bool recursive;				/* -R */
+	bool list;
+	bool one_per_line;
+	bool not_owner;
+	bool dir_order;
+	bool flag_f;
 
-	bool sort_rev;				/* -r */
-	bool sort_mod_time;			/* -t */
-	bool sort_acc_time;			/* -u
-								 * if -lt ignore t.
-								 * if -l, show access sort by ascii */
-	bool human_size;			/* -h */
+	bool list_dirs;
 
+	bool show_all;
+	bool show_almost;
+	bool recursive;
 
+	bool sort_rev;
+	bool sort_mod_time;
+	bool sort_acc_time;
+
+	bool human_size;
+};
+
+struct						s_qarray
+{
+	t_qnode		**base;
+	size_t		size;
 };
 
 void						ft_ls(const char *path, t_flags *flags);
 t_queue						*handle_sort(t_queue **aqueue, t_flags *flags);
+void						display_files(t_queue **files, t_flags *flags);
+
+bool						user_has_permission(const char *path,
+													struct stat st);
+void						raise_error(t_queue **files, const char *path);
+void						set_widths(struct stat st, const char *name);
+void						reset_widths(void);
+bool						set_stat(t_file *file, const char *path,
+										t_flags *flags, bool *is_there_error);
+
+int							do_sort_ascii(t_qnode *e1, t_qnode *e2, bool rev);
+int							do_sort_mod_time(t_qnode *e1, t_qnode *e2,
+												bool rev);
+int							do_sort_acc_time(t_qnode *e1, t_qnode *e2,
+												bool rev);
+
+int							sort_ascii_desc(t_qnode *e1, t_qnode *e2);
+int							sort_ascii_asc(t_qnode *e1, t_qnode *e2);
+int							sort_acc_time_desc(t_qnode *e1, t_qnode *e2);
+int							sort_acc_time_asc(t_qnode *e1, t_qnode *e2);
+int							sort_mod_time_desc(t_qnode *e1, t_qnode *e2);
+int							sort_mod_time_asc(t_qnode *e1, t_qnode *e2);
+
+void						enqueue_dirs(t_queue *dirs, t_file *file,
+											t_flags *flags);
+size_t						get_step(size_t size);
+int							queue_strcmp(t_qnode *u, t_qnode *v);
 
 #endif
