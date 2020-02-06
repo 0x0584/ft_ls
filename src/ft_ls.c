@@ -6,14 +6,13 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/01/26 18:16:40 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/26 18:55:32 by archid-          ###   ########.fr       */
+/*   Updated: 2020/01/29 20:30:30 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ft_ls.h"
 
-void	ft_ls_dir(struct stat st, t_queue **files,
-					const char *path, t_flags *flags)
+static void	ft_ls_dir(t_queue **files, const char *path, t_flags *flags)
 {
 	DIR				*repo;
 	struct dirent	*node;
@@ -22,8 +21,6 @@ void	ft_ls_dir(struct stat st, t_queue **files,
 	g_total = 0;
 	if (flags->recursive && ft_strcmp(path, "."))
 		ft_printf("\n%s:\n", path);
-	if (!user_has_permission(path, st))
-		return (raise_error(files, NULL));
 	if (!(repo = opendir(path)))
 		return (raise_error(files, path));
 	while ((node = readdir(repo)))
@@ -57,7 +54,7 @@ void	ft_ls(const char *path, t_flags *flags)
 	if (FILE_TYPE(st, S_IFDIR))
 	{
 		g_found_chr_dev = false;
-		ft_ls_dir(st, &files, path, flags);
+		ft_ls_dir(&files, path, flags);
 		if (files == NULL)
 			return ;
 	}

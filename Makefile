@@ -6,11 +6,11 @@
 #    By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/12/08 22:27:47 by archid-           #+#    #+#              #
-#    Updated: 2020/01/23 20:27:45 by archid-          ###   ########.fr        #
+#    Updated: 2020/01/29 20:34:56 by archid-          ###   ########.fr        #
 #                                                                              #
 #******************************************************************************#
 
-DEBUG		?= 1
+DEBUG		?= 0
 NAME		= ft_ls
 
 FTDIR		= libft
@@ -30,17 +30,17 @@ DEPS		= -I$(FTDIR) -Iinclude
 ifeq ($(DEBUG),1)
 	CFLAGS += -g
 else
-	CFLAGS += -Werror -O2
+	CFLAGS += -Werror
 endif
 
 all: $(NAME)
 
 $(NAME): init $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $(OBJS) $(DEPS) $(LDFT)
+	@$(CC) $(CFLAGS) -o $@ $(OBJS) $(DEPS) $(LDFT)
 
 $(OBJSDIR)/%.o: $(SRCSDIR)/%.c
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c $< -o $@ $(DEPS)
+	@$(CC) $(CFLAGS) -c $< -o $@ $(DEPS)
 
 init:
 	@make -C $(FTDIR)
