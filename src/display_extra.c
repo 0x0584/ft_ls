@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/01/26 18:25:10 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/26 18:36:20 by archid-          ###   ########.fr       */
+/*   Updated: 2020/02/06 20:59:29 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,4 +34,12 @@ int		queue_strcmp(t_qnode *u, t_qnode *v)
 	else if (!v || !v->blob)
 		return (false);
 	return (ft_strcmp(u->blob, v->blob));
+}
+
+void	print_usage(char option, char *prog_name)
+{
+	ft_printf("%s: illegale option %c\n"
+				"usage: [-1lhuaARrt] [file ...]\n",
+				prog_name, option);
+	exit(1);
 }

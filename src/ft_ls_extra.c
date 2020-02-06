@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/01/26 18:17:15 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/26 18:24:12 by archid-          ###   ########.fr       */
+/*   Updated: 2020/02/06 20:55:07 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@ void	set_widths(struct stat st, const char *name)
 {
 	g_column_width = MAX((int)ft_strlen(name) + 1, g_column_width);
 	g_link_width = MAX(g_link_width, ft_digitcount(st.st_nlink));
-	g_size_width = MAX(g_size_width, ft_digitcount(st.st_size));
+	g_size_width = MAX(g_size_width, ft_digitcount(st.st_size) + 1);
 }
 
 void	reset_widths(void)

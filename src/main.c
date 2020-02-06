@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:23:22 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/29 20:43:59 by archid-          ###   ########.fr       */
+/*   Updated: 2020/02/06 21:00:41 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,35 +21,29 @@ int				g_gid_width = 1;
 bool			g_found_chr_dev = false;
 size_t			g_total = 0;
 
-void	print_usage(char option, char *prog_name)
-{
-	ft_printf("%s: illegale option %c\n"
-			  "usage: [-1lhuaARrt] [file ...]\n",
-			  prog_name, option);
-	exit(1);
-}
-
 bool	set_flag(char flag, t_flags *flags)
 {
-	if (flag == FLAG_LIST)
-		return flags->list = true;
+	if (!flag)
+		return (true);
+	else if (flag == FLAG_LIST)
+		return (flags->list = true);
 	else if (flag == FLAG_ONE_PER_LINE)
-		return flags->one_per_line = true;
+		return (flags->one_per_line = true);
 	else if (flag == FLAG_HUMAN_SIZE)
-		return flags->human_size = true;
+		return (flags->human_size = true);
 	else if (flag == FLAG_SHOW_ALL)
-		return flags->show_all = true;
+		return (flags->show_all = true);
 	else if (flag == FLAG_SHOW_ALMOST_ALL)
-		return flags->show_almost = true;
+		return (flags->show_almost = true);
 	else if (flag == FLAG_RECURSIVE)
-		return flags->recursive = true;
+		return (flags->recursive = true);
 	else if (flag == FLAG_SORT_REV)
-		return flags->sort_rev = true;
+		return (flags->sort_rev = true);
 	else if (flag == FLAG_SORT_ACC_TIME)
-		return flags->sort_acc_time = true;
+		return (flags->sort_acc_time = true);
 	else if (flag == FLAG_SORT_MOD_TIME)
-		return flags->sort_mod_time = true;
-	return false;
+		return (flags->sort_mod_time = true);
+	return (false);
 }
 
 int		parse_flags(int ac, char **av, t_flags *flags)

@@ -6,7 +6,7 @@
 #    By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/12/08 22:27:47 by archid-           #+#    #+#              #
-#    Updated: 2020/01/29 20:34:56 by archid-          ###   ########.fr        #
+#    Updated: 2020/02/06 20:50:56 by archid-          ###   ########.fr        #
 #                                                                              #
 #******************************************************************************#
 
@@ -36,11 +36,11 @@ endif
 all: $(NAME)
 
 $(NAME): init $(OBJS)
-	@$(CC) $(CFLAGS) -o $@ $(OBJS) $(DEPS) $(LDFT)
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(DEPS) $(LDFT)
 
 $(OBJSDIR)/%.o: $(SRCSDIR)/%.c
 	@mkdir -p $(@D)
-	@$(CC) $(CFLAGS) -c $< -o $@ $(DEPS)
+	$(CC) $(CFLAGS) -c $< -o $@ $(DEPS)
 
 init:
 	@make -C $(FTDIR)

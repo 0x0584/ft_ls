@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/09 00:06:17 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/26 18:57:11 by archid-          ###   ########.fr       */
+/*   Updated: 2020/02/06 21:00:27 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -89,5 +89,6 @@ void						enqueue_dirs(t_queue *dirs, t_file *file,
 											t_flags *flags);
 size_t						get_step(size_t size);
 int							queue_strcmp(t_qnode *u, t_qnode *v);
+void						print_usage(char option, char *prog_name);
 
 #endif

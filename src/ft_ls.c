@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/01/26 18:16:40 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/29 20:30:30 by archid-          ###   ########.fr       */
+/*   Updated: 2020/02/06 20:58:42 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ static void	ft_ls_dir(t_queue **files, const char *path, t_flags *flags)
 	closedir(repo);
 }
 
-void	ft_ls(const char *path, t_flags *flags)
+void		ft_ls(const char *path, t_flags *flags)
 {
 	struct stat		st;
 	t_file			file;
