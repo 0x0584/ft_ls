@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/01/24 14:38:50 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/26 00:16:29 by archid-          ###   ########.fr       */
+/*   Updated: 2020/02/07 12:29:35 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,11 +36,11 @@ char	get_file_type(struct stat s)
 
 char	*get_file_permissions(struct stat s)
 {
+	static char			bits[11];
 	static const char	*rwx[] = {
 		"---", "--x", "-w-", "-wx",
 		"r--", "r-x", "rw-", "rwx"
 	};
-	static char			bits[11];
 
 	bits[0] = get_file_type(s);
 	ft_strcpy(&bits[1], rwx[(s.st_mode >> 6) & 7]);
@@ -56,28 +56,16 @@ char	*get_file_permissions(struct stat s)
 	return (bits);
 }
 
-char	*read_link_name(t_file *file)
-{
-	static char buff[256] = {0};
-
-	ft_bzero(buff, 256);
-	if (file->islnk)
-	{
-		ft_strcpy(buff, " -> ");
-		readlink(file->path, buff + ft_strlen(" -> "), file->st.st_size + 1);
-	}
-	else
-		*buff = '\0';
-	return (buff);
-}
-
 char	*get_file_size(t_file *file, t_flags *flags)
 {
-	static char		*units[] = {"", "B", "K", "M", "G", "T", "E", "Z"};
-	static char		buff[64] = {0};
-	double			size;
-	size_t			unit;
+	static char buff[64] = {0};
+	static char *units[] = {"", "B", "K", "M", "G", "T", "E", "Z"};
+	double		size;
+	size_t		unit;
 
+	ft_bzero(buff, 64);
+	if (FILE_TYPE(file->st, S_IFCHR))
+		return (buff);
 	unit = 0;
 	size = file->st.st_size;
 	if (flags->human_size)
@@ -91,10 +79,9 @@ char	*get_file_size(t_file *file, t_flags *flags)
 		ft_snprintf(buff, 64, "%.1lf", size);
 	}
 	else
-	{
 		ft_snprintf(buff, 64, "%lld", file->st.st_size);
-	}
-	ft_snprintf(buff, 64, "%*s%s", g_size_width + 1, buff, units[unit]);
+	ft_snprintf(buff, 64, "%s%*s%s", g_found_chr_dev ? "       " : "",
+				g_size_width + 1, buff, units[unit]);
 	return (buff);
 }
 
@@ -115,28 +102,6 @@ char	*get_file_datetime(t_file *file, t_flags *flags)
 		lastchange += 8;
 	ft_snprintf(buff, 13, "%.7s%.5s", stime + 4, stime + lastchange);
 	return (buff);
-}
-
-char	*get_file_xattr(t_file *file)
-{
-	static char symb[2] = {0, 0};
-	acl_entry_t tmp;
-	acl_t		acl;
-
-	*symb = ' ';
-	acl = acl_get_link_np(file->path, ACL_TYPE_EXTENDED);
-	if (acl && acl_get_entry(acl, ACL_FIRST_ENTRY, &tmp) == -1)
-	{
-		acl_free(acl);
-		return (symb);
-	}
-	if (listxattr(file->path, NULL, 0, XATTR_NOFOLLOW) > 0)
-		*symb = '@';
-	else if (acl)
-		*symb = '+';
-	if (acl)
-		acl_free(acl);
-	return (symb);
 }
 
 char	*get_char_dev(t_file *file)

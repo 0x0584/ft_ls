@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/01/17 21:07:43 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/26 00:36:55 by archid-          ###   ########.fr       */
+/*   Updated: 2020/02/07 12:25:04 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,12 @@ extern int				g_size_width;
 extern int				g_column_width;
 extern int				g_uid_width;
 extern int				g_gid_width;
+extern bool				g_found_chr_dev;
+extern size_t			g_total;
 
+extern struct winsize	win_size;
+
+typedef struct s_file	t_file;
 typedef struct s_flags	t_flags;
 typedef struct s_file	t_file;
 

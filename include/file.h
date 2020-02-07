@@ -6,7 +6,7 @@
 /*   By: archid- <archid-@student.1337.ma>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/01/17 21:06:59 by archid-           #+#    #+#             */
-/*   Updated: 2020/01/26 00:36:20 by archid-          ###   ########.fr       */
+/*   Updated: 2020/02/07 12:25:18 by archid-          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,9 @@
 
 # include "common.h"
 
-# define FILE_TYPE(s, type)					((s.st_mode & S_IFMT) == type)
-# define SIXMONTHS							((365 / 2) * 86400)
+# define FILE_TYPE(s, type)	  ((s.st_mode & S_IFMT) == type)
+# define DOT_REPOS(path)	  (!ft_strcmp(".", path) || !ft_strcmp("..", path))
+# define SIXMONTHS			  ((365 / 2) * 86400)
 
 struct					s_file
 {
@@ -26,9 +27,8 @@ struct					s_file
 
 	struct stat		st;
 	bool			islnk;
-
-	struct passwd	*pwd;
-	struct group	*grp;
+	char			*pwd;
+	char			*grp;
 };
 
 bool					file_init(t_file *file, const char *path,
